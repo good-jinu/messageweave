@@ -127,6 +127,16 @@ export interface PublishEventInput {
 	parentEventIds?: string[];
 }
 
+/** Input for {@link ChatCore.sendMessage}. */
+export interface SendMessageInput {
+	roomId: string;
+	senderId: string;
+	/** Message body. Whitespace-only messages are rejected. */
+	body: string;
+	/** Parent event ids when sending a reply. */
+	parentEventIds?: string[];
+}
+
 /** Result of {@link ChatCore.publishEvent}. */
 export interface PublishEventResult {
 	event: FlowEvent;

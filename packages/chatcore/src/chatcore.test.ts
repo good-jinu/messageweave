@@ -92,7 +92,7 @@ describe("rooms", () => {
 			t.flow.createRoom({
 				creatorId: "u1",
 				// @ts-expect-error testing invalid input
-				metadata: { createdAt: Temporal.Now.instant() },
+				metadata: { createdAt: new Date() },
 			}),
 		).rejects.toBeInstanceOf(ChatCoreError);
 	});
@@ -175,7 +175,56 @@ describe("publishEvent", () => {
 				senderId: "u1",
 				type: "message.text",
 				// @ts-expect-error testing invalid input
-				content: { sentAt: Temporal.Now.instant() },
+				content: { sentAt: new Date() },
+			}),
+		).rejects.toBeInstanceOf(ChatCoreError);
+	});
+});
+
+describe("sendMessage", () => {
+	it("publishes a text message", async () => {
+		const room = await t.flow.createRoom({ creatorId: "u1" });
+
+		const result = await t.flow.sendMessage({
+			roomId: room.id,
+			senderId: "u1",
+			body: "hello",
+		});
+
+		expect(result.event.type).toBe("message.text");
+		expect(result.event.content).toEqual({ body: "hello" });
+	});
+
+	it("supports replies", async () => {
+		const room = await t.flow.createRoom({ creatorId: "u1" });
+		const parent = await t.flow.sendMessage({
+			roomId: room.id,
+			senderId: "u1",
+			body: "parent",
+		});
+
+		const reply = await t.flow.sendMessage({
+			roomId: room.id,
+			senderId: "u2",
+			body: "reply",
+			parentEventIds: [parent.event.id],
+		});
+
+		expect(t.db.eventEdge).toContainEqual({
+			id: expect.any(String),
+			eventId: reply.event.id,
+			parentEventId: parent.event.id,
+		});
+	});
+
+	it("rejects whitespace-only messages", async () => {
+		const room = await t.flow.createRoom({ creatorId: "u1" });
+
+		await expect(
+			t.flow.sendMessage({
+				roomId: room.id,
+				senderId: "u1",
+				body: "   ",
 			}),
 		).rejects.toBeInstanceOf(ChatCoreError);
 	});

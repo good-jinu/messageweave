@@ -61,6 +61,15 @@ const publishEventSchema = z.object({
 	parentEventIds: z.array(z.string().min(1)).optional(),
 });
 
+const sendMessageSchema = z.object({
+	roomId: z.string().min(1, "roomId is required"),
+	senderId: z.string().min(1, "senderId is required"),
+	body: z
+		.string()
+		.refine((value) => value.trim().length > 0, "body is required"),
+	parentEventIds: z.array(z.string().min(1)).optional(),
+});
+
 /** Validate and normalize {@link createRoom} input, throwing on error. */
 export function parseCreateRoomInput(input: unknown) {
 	const result = createRoomSchema.safeParse(input);
@@ -78,6 +87,17 @@ export function parsePublishEventInput(input: unknown) {
 	if (!result.success) {
 		throw new ChatCoreError(
 			`Invalid publishEvent input: ${result.error.issues.map((i) => i.message).join(", ")}`,
+		);
+	}
+	return result.data;
+}
+
+/** Validate and normalize {@link sendMessage} input, throwing on error. */
+export function parseSendMessageInput(input: unknown) {
+	const result = sendMessageSchema.safeParse(input);
+	if (!result.success) {
+		throw new ChatCoreError(
+			`Invalid sendMessage input: ${result.error.issues.map((i) => i.message).join(", ")}`,
 		);
 	}
 	return result.data;
