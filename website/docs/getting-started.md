@@ -20,15 +20,14 @@ import { getTestInstance } from "chatcore/test";
 const { flow } = getTestInstance();
 
 const room = await flow.createRoom({
-  creatorId: "u1",
-  metadata: { name: "general" },
+	creatorId: "u1",
+	metadata: { name: "general" },
 });
 
-await flow.publishEvent({
-  roomId: room.id,
-  senderId: "u1",
-  type: "message.text",
-  content: { body: "hello" },
+await flow.sendMessage({
+	roomId: room.id,
+	senderId: "u1",
+	body: "hello",
 });
 
 // Drive real-time sync from a single global cursor:
@@ -56,6 +55,7 @@ const { flow, db } = getTestInstance();
 | `createRoom({ creatorId, metadata? })` | Create an isolated conversation boundary. |
 | `getRoom(roomId)` | Fetch a room, or `null`. |
 | `listRooms({ limit?, order? })` | List rooms by creation time. |
+| `sendMessage({ roomId, senderId, body, parentEventIds? })` | Publish a plain-text message, optionally as a reply. |
 | `publishEvent({ roomId, senderId, type, stateKey?, content?, parentEventIds? })` | Append an immutable event; returns `{ event, sequenceId }`. |
 | `getRoomState(roomId)` | The active state events (latest per `[type, stateKey]`). |
 | `getRoomTimeline(roomId, { limit?, beforeSequenceId? })` | A room's events, newest-first. |

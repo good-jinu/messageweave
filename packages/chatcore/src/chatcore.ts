@@ -1,5 +1,6 @@
 import { createFlowAdapter } from "./db/adapter";
 import { createSequencer } from "./db/sequence";
+import { createMessageMethods } from "./engine/messages";
 import { createPublishMethod } from "./engine/publish";
 import { createRoomMethods } from "./engine/rooms";
 import { createStateMethods } from "./engine/state";
@@ -15,6 +16,7 @@ import type {
 	PublishEventInput,
 	PublishEventResult,
 	Room,
+	SendMessageInput,
 	SyncStreamResult,
 } from "./types";
 
@@ -26,6 +28,7 @@ export interface ChatCore {
 	getRoom(roomId: string): Promise<Room | null>;
 	listRooms(options?: ListRoomsOptions): Promise<Room[]>;
 	publishEvent(input: PublishEventInput): Promise<PublishEventResult>;
+	sendMessage(input: SendMessageInput): Promise<PublishEventResult>;
 	getRoomState(roomId: string): Promise<FlowEvent[]>;
 	getRoomTimeline(
 		roomId: string,
@@ -44,11 +47,10 @@ export interface ChatCore {
  *
  * const flow = createChatCore({ storage });
  * const room = await flow.createRoom({ creatorId: "u1" });
- * await flow.publishEvent({
+ * await flow.sendMessage({
  *   roomId: room.id,
  *   senderId: "u1",
- *   type: "message.text",
- *   content: { body: "hello" },
+ *   body: "hello",
  * });
  * const { events, nextToken } = await flow.getSyncStream({ sinceSequenceId: 0 });
  * ```
@@ -65,6 +67,7 @@ export function createChatCore(options: ChatCoreOptions): ChatCore {
 	const { publishEvent } = createPublishMethod(adapter, sequencer, {
 		maxContentBytes: options.maxContentBytes,
 	});
+	const { sendMessage } = createMessageMethods(publishEvent);
 	const { getRoomState } = createStateMethods(adapter);
 	const { getRoomTimeline } = createTimelineMethods(adapter, defaultLimit);
 	const { getSyncStream } = createSyncMethods(adapter, defaultLimit);
@@ -75,6 +78,7 @@ export function createChatCore(options: ChatCoreOptions): ChatCore {
 		getRoom,
 		listRooms,
 		publishEvent,
+		sendMessage,
 		getRoomState,
 		getRoomTimeline,
 		getSyncStream,

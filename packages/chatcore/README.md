@@ -12,11 +12,10 @@ import { getTestInstance } from "chatcore/test";
 const { flow } = getTestInstance();
 
 const room = await flow.createRoom({ creatorId: "u1" });
-await flow.publishEvent({
+await flow.sendMessage({
   roomId: room.id,
   senderId: "u1",
-  type: "message.text",
-  content: { body: "hello" },
+  body: "hello",
 });
 const { events, nextToken } = await flow.getSyncStream({ sinceSequenceId: 0 });
 ```
