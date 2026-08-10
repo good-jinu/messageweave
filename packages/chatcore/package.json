@@ -12,6 +12,7 @@
   },
   "scripts": {
     "build": "tsdown",
+    "clean": "rm -rf dist",
     "dev": "tsdown --watch",
     "test": "vitest",
     "lint:package": "publint",
