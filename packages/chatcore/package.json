@@ -1,5 +1,5 @@
 {
-  "name": "chatcore",
+  "name": "messageweave",
   "version": "0.2.0",
   "description": "An in-process, database-agnostic, event-sourced messaging engine for TypeScript.",
   "type": "module",

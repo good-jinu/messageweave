@@ -1,5 +1,5 @@
 {
-  "name": "@chatcore/cli",
+  "name": "@messageweave/cli",
   "version": "0.2.0",
   "description": "Command-line tools for ChatCore.",
   "type": "module",
@@ -10,8 +10,11 @@
     "url": "git+https://github.com/good-jinu/chatcore.git",
     "directory": "packages/cli"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "bin": {
-    "chatcore": "./dist/cli.mjs"
+    "messageweave": "./dist/cli.mjs"
   },
   "main": "./dist/index.mjs",
   "module": "./dist/index.mjs",

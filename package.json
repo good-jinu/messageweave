@@ -1,5 +1,5 @@
 {
-  "name": "chatcore-root",
+  "name": "messageweave-root",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@11.2.2",

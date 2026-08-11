@@ -9,13 +9,13 @@ sidebar_position: 2
 ## Install
 
 ```bash
-pnpm add chatcore
+pnpm add messageweave
 ```
 
 ## Quick start
 
 ```ts
-import { getTestInstance } from "chatcore/test";
+import { getTestInstance } from "messageweave/test";
 
 const { flow } = getTestInstance();
 
@@ -42,7 +42,7 @@ ChatCore's `ChatCoreStorage` interface with their database library of choice.
 ## Testing helper
 
 ```ts
-import { getTestInstance } from "chatcore/test";
+import { getTestInstance } from "messageweave/test";
 
 const { flow, db } = getTestInstance();
 // `flow` is a ChatCore engine, `db` is the raw in-memory store for assertions.

@@ -3,7 +3,7 @@ import type { Config } from "@docusaurus/types";
 import { themes as prismThemes } from "prism-react-renderer";
 
 const config: Config = {
-	title: "ChatCore",
+	title: "MessageWeave",
 	tagline:
 		"An in-process, database-agnostic, event-sourced messaging engine for TypeScript",
 
@@ -54,7 +54,7 @@ const config: Config = {
 
 	themeConfig: {
 		navbar: {
-			title: "ChatCore",
+			title: "MessageWeave",
 			items: [
 				{
 					type: "docSidebar",
@@ -68,7 +68,7 @@ const config: Config = {
 					position: "left",
 				},
 				{
-					href: "https://www.npmjs.com/package/chatcore",
+					href: "https://www.npmjs.com/package/messageweave",
 					label: "npm",
 					position: "right",
 				},
@@ -98,12 +98,12 @@ const config: Config = {
 						},
 						{
 							label: "npm",
-							href: "https://www.npmjs.com/package/chatcore",
+							href: "https://www.npmjs.com/package/messageweave",
 						},
 					],
 				},
 			],
-			copyright: `Copyright © ${"2026"} ChatCore. Built with Docusaurus.`,
+			copyright: `Copyright © ${"2026"} MessageWeave. Built with Docusaurus.`,
 		},
 		prism: {
 			theme: prismThemes.github,

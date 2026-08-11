@@ -43,7 +43,7 @@ export interface ChatCore {
  *
  * @example
  * ```ts
- * import { createChatCore } from "chatcore";
+ * import { createChatCore } from "messageweave";
  *
  * const flow = createChatCore({ storage });
  * const room = await flow.createRoom({ creatorId: "u1" });

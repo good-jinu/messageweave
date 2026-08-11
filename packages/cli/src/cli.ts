@@ -6,7 +6,7 @@ import { generateChatCoreSchema } from "./generate";
 import { VERSION } from "./version";
 
 const USAGE = `Usage:
-  chatcore schema generate --dialect <sqlite|postgres|mysql> [--out <file>]
+  messageweave schema generate --dialect <sqlite|postgres|mysql> [--out <file>]
 
 Options:
   --dialect       SQL dialect to generate: sqlite, postgres, or mysql.

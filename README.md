@@ -1,7 +1,7 @@
-# ChatCore
+# MessageWeave
 
 An in-process, database-agnostic, **event-sourced** messaging engine for
-TypeScript. ChatCore provides the core logical engine for chat
+TypeScript. MessageWeave provides the core logical engine for chat
 applications — the transport layer (HTTP, WebSockets, gRPC) and the storage
 engine are left entirely in your hands.
 
@@ -18,13 +18,13 @@ engine are left entirely in your hands.
 ## Install
 
 ```bash
-pnpm add chatcore
+pnpm add messageweave
 ```
 
 ## Quick start
 
 ```ts
-import { getTestInstance } from "chatcore/test";
+import { getTestInstance } from "messageweave/test";
 
 const { flow } = getTestInstance();
 
@@ -44,7 +44,7 @@ const { events, nextToken } = await flow.getSyncStream({ sinceSequenceId: 0 });
 For production, pass `createChatCore` a storage implementation:
 
 ```ts
-import { createChatCore } from "chatcore";
+import { createChatCore } from "messageweave";
 import { createChatCoreStorage } from "./storage";
 
 const flow = createChatCore({
@@ -56,7 +56,7 @@ Generate starter SQL for ChatCore's storage tables with the separate CLI
 package:
 
 ```bash
-pnpm dlx @chatcore/cli schema generate --dialect sqlite --out migrations/001_chatcore.sql
+pnpm dlx @messageweave/cli schema generate --dialect sqlite --out migrations/001_chatcore.sql
 ```
 
 For media and attachments, keep event payloads small and store only opaque,
@@ -64,7 +64,7 @@ host-issued attachment references. ChatCore synchronizes the references; the
 host application owns upload, storage, authorization, delivery, and deletion:
 
 ```ts
-import type { AttachmentReference } from "chatcore";
+import type { AttachmentReference } from "messageweave";
 
 // Issued after the host application completes and verifies an upload.
 const attachment = {

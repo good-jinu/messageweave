@@ -4,6 +4,8 @@ import { createServer } from "node:http";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 import Database from "better-sqlite3";
+import type { RawBuilder } from "kysely";
+import { Kysely, SqliteDialect, sql } from "kysely";
 import type {
 	ChatCoreStorage,
 	ChatCoreStorageRow,
@@ -11,10 +13,8 @@ import type {
 	FlowEvent,
 	JsonObject,
 	Room,
-} from "chatcore";
-import { createChatCore, generateId } from "chatcore";
-import type { RawBuilder } from "kysely";
-import { Kysely, SqliteDialect, sql } from "kysely";
+} from "messageweave";
+import { createChatCore, generateId } from "messageweave";
 import { ensureChatCoreSchema } from "./schema.js";
 
 type JsonRecord = Record<string, unknown>;

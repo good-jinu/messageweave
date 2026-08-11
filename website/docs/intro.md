@@ -5,14 +5,14 @@ sidebar_position: 1
 slug: /
 ---
 
-# ChatCore
+# MessageWeave
 
-**ChatCore** is an in-process, database-agnostic, **event-sourced** messaging
+**MessageWeave** is an in-process, database-agnostic, **event-sourced** messaging
 engine for TypeScript. It provides the core logical engine for chat
 applications — the transport layer (HTTP, WebSockets, gRPC) and the storage
 engine are left entirely in your hands.
 
-## Why ChatCore
+## Why MessageWeave
 
 - **Database agnostic** — all persistence is delegated to a ChatCore storage
   backend you supply.
@@ -35,6 +35,6 @@ ChatCore is just the engine. You bring:
 The engine handles the hard parts: immutable event storage, room state
 reduction, threaded timelines, and a single global cursor for real-time sync.
 
-Continue to **[Getting Started](./getting-started.md)** to install ChatCore and
+Continue to **[Getting Started](./getting-started.md)** to install MessageWeave and
 publish your first event, or jump straight to the
 **[API Reference](./api/index.md)**.

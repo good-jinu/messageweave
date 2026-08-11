@@ -1,8 +1,8 @@
-# @chatcore/cli
+# @messageweave/cli
 
 Command-line tools for ChatCore.
 
-The CLI is shipped separately from the runtime `chatcore` package so application
+The CLI is shipped separately from the runtime `messageweave` package so application
 code does not install CLI-only dependencies. Internally, this package uses
 `unadapter` to generate database schema SQL from ChatCore's canonical storage
 schema.
@@ -12,13 +12,13 @@ schema.
 Generate starter SQL for ChatCore's storage tables:
 
 ```bash
-pnpm dlx @chatcore/cli schema generate --dialect sqlite --out migrations/001_chatcore.sql
+pnpm dlx @messageweave/cli schema generate --dialect sqlite --out migrations/001_chatcore.sql
 ```
 
 Print SQL to stdout:
 
 ```bash
-pnpm dlx @chatcore/cli schema generate --dialect postgres
+pnpm dlx @messageweave/cli schema generate --dialect postgres
 ```
 
 ## Commands
@@ -26,7 +26,7 @@ pnpm dlx @chatcore/cli schema generate --dialect postgres
 ### `schema generate`
 
 ```bash
-chatcore schema generate --dialect <sqlite|postgres|mysql> [--out <file>]
+messageweave schema generate --dialect <sqlite|postgres|mysql> [--out <file>]
 ```
 
 Options:
@@ -42,19 +42,19 @@ Options:
 SQLite:
 
 ```bash
-pnpm dlx @chatcore/cli schema generate --dialect sqlite --out migrations/001_chatcore.sql
+pnpm dlx @messageweave/cli schema generate --dialect sqlite --out migrations/001_chatcore.sql
 ```
 
 Postgres with database-generated UUID ids:
 
 ```bash
-pnpm dlx @chatcore/cli schema generate --dialect postgres --id-strategy uuid
+pnpm dlx @messageweave/cli schema generate --dialect postgres --id-strategy uuid
 ```
 
 MySQL:
 
 ```bash
-pnpm dlx @chatcore/cli schema generate --dialect mysql
+pnpm dlx @messageweave/cli schema generate --dialect mysql
 ```
 
 ## Scope
