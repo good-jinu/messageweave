@@ -5,7 +5,7 @@
   "packageManager": "pnpm@11.2.2",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/good-jinu/chatcore.git"
+    "url": "git+https://github.com/good-jinu/messageweave.git"
   },
   "scripts": {
     "build": "pnpm -r build",
