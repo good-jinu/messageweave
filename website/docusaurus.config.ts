@@ -3,17 +3,17 @@ import type { Config } from "@docusaurus/types";
 import { themes as prismThemes } from "prism-react-renderer";
 
 const config: Config = {
-	title: "ChatCore",
+	title: "MessageWeave",
 	tagline:
 		"An in-process, database-agnostic, event-sourced messaging engine for TypeScript",
 
 	// Production URL and the path the site is served from on GitHub Pages.
 	url: "https://good-jinu.github.io",
-	baseUrl: "/chatcore/",
+	baseUrl: "/messageweave/",
 
 	// GitHub Pages deployment config.
 	organizationName: "good-jinu",
-	projectName: "chatcore",
+	projectName: "messageweave",
 	trailingSlash: false,
 
 	// Generated API markdown can contain cross-links that don't always resolve
@@ -42,7 +42,8 @@ const config: Config = {
 				docs: {
 					routeBasePath: "/",
 					sidebarPath: "./sidebars.ts",
-					editUrl: "https://github.com/good-jinu/chatcore/tree/main/website/",
+					editUrl:
+						"https://github.com/good-jinu/messageweave/tree/main/website/",
 				},
 				blog: false,
 				theme: {
@@ -54,7 +55,7 @@ const config: Config = {
 
 	themeConfig: {
 		navbar: {
-			title: "ChatCore",
+			title: "MessageWeave",
 			items: [
 				{
 					type: "docSidebar",
@@ -68,12 +69,12 @@ const config: Config = {
 					position: "left",
 				},
 				{
-					href: "https://www.npmjs.com/package/chatcore",
+					href: "https://www.npmjs.com/package/messageweave",
 					label: "npm",
 					position: "right",
 				},
 				{
-					href: "https://github.com/good-jinu/chatcore",
+					href: "https://github.com/good-jinu/messageweave",
 					label: "GitHub",
 					position: "right",
 				},
@@ -94,16 +95,16 @@ const config: Config = {
 					items: [
 						{
 							label: "GitHub",
-							href: "https://github.com/good-jinu/chatcore",
+							href: "https://github.com/good-jinu/messageweave",
 						},
 						{
 							label: "npm",
-							href: "https://www.npmjs.com/package/chatcore",
+							href: "https://www.npmjs.com/package/messageweave",
 						},
 					],
 				},
 			],
-			copyright: `Copyright © ${"2026"} ChatCore. Built with Docusaurus.`,
+			copyright: `Copyright © ${"2026"} MessageWeave. Built with Docusaurus.`,
 		},
 		prism: {
 			theme: prismThemes.github,

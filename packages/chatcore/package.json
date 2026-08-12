@@ -1,13 +1,13 @@
 {
-  "name": "chatcore",
-  "version": "0.2.0",
+  "name": "messageweave",
+  "version": "0.0.0",
   "description": "An in-process, database-agnostic, event-sourced messaging engine for TypeScript.",
   "type": "module",
   "license": "MIT",
   "sideEffects": false,
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/good-jinu/chatcore.git",
+    "url": "git+https://github.com/good-jinu/messageweave.git",
     "directory": "packages/chatcore"
   },
   "scripts": {

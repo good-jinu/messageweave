@@ -1,4 +1,4 @@
-# @chatcore/cli
+# @messageweave/cli
 
 ## 0.2.0
 

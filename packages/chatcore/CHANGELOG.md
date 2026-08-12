@@ -1,4 +1,4 @@
-# chatcore
+# messageweave
 
 ## 0.2.0
 

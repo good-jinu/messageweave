@@ -1,5 +1,5 @@
 {
-  "name": "@chatcore/example-chat-app",
+  "name": "@messageweave/example-chat-app",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,16 +8,16 @@
     "db:init": "pnpm build && node dist/init-db.js",
     "db:reset": "rm -f data/chatcore.sqlite",
     "dev": "pnpm build && node dist/server.js",
-    "schema:generate": "pnpm -C ../../packages/cli build && chatcore schema generate --dialect sqlite --out schema/chatcore.sql",
+    "schema:generate": "pnpm -C ../../packages/cli build && messageweave schema generate --dialect sqlite --out schema/chatcore.sql",
     "start": "node dist/server.js"
   },
   "dependencies": {
     "better-sqlite3": "^12.11.1",
-    "chatcore": "workspace:*",
+    "messageweave": "workspace:*",
     "kysely": "^0.29.2"
   },
   "devDependencies": {
-    "@chatcore/cli": "workspace:*",
+    "@messageweave/cli": "workspace:*",
     "@types/better-sqlite3": "^7.6.13",
     "typescript": "catalog:"
   }

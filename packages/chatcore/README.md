@@ -1,13 +1,13 @@
-# chatcore
+# messageweave
 
 An in-process, database-agnostic, event-sourced messaging engine for TypeScript.
 
 ```bash
-pnpm add chatcore
+pnpm add messageweave
 ```
 
 ```ts
-import { getTestInstance } from "chatcore/test";
+import { getTestInstance } from "messageweave/test";
 
 const { flow } = getTestInstance();
 
@@ -36,7 +36,7 @@ ChatCore persists through a storage backend passed as `options.storage`.
 The application owns the database integration:
 
 ```ts
-import { createChatCore } from "chatcore";
+import { createChatCore } from "messageweave";
 import { createChatCoreStorage } from "./storage";
 
 const flow = createChatCore({
@@ -57,7 +57,7 @@ storage implementation that provides its own atomic ordering.
 **Testing.** For tests, use the included corrected in-memory helper:
 
 ```ts
-import { getTestInstance } from "chatcore/test";
+import { getTestInstance } from "messageweave/test";
 
 const { flow, db } = getTestInstance();
 ```
@@ -70,7 +70,7 @@ the host completes and verifies an upload, put its opaque attachment id and
 portable presentation metadata in event content:
 
 ```ts
-import type { AttachmentReference } from "chatcore";
+import type { AttachmentReference } from "messageweave";
 
 const attachment = {
   id: "att_01JABCDEF",
@@ -105,14 +105,14 @@ transcoding, retention, and orphan cleanup.
 
 ## Provisioning the schema
 
-ChatCore stores five tables — `room`, `event`, `eventEdge`, `roomState`,
+MessageWeave stores five tables — `room`, `event`, `eventEdge`, `roomState`,
 `sequence`. How you create them depends on the adapter:
 
 For SQL databases, the separate CLI package can generate starter DDL without
-adding CLI-only dependencies to the runtime `chatcore` package:
+adding CLI-only dependencies to the runtime `messageweave` package:
 
 ```bash
-pnpm dlx @chatcore/cli schema generate --dialect sqlite --out migrations/001_chatcore.sql
+pnpm dlx @messageweave/cli schema generate --dialect sqlite --out migrations/001_chatcore.sql
 ```
 
 | Adapter | What you do |
@@ -127,7 +127,7 @@ pnpm dlx @chatcore/cli schema generate --dialect sqlite --out migrations/001_cha
 may store these as native JSON columns, serialized strings, `bigint`, or other
 database-specific types, but it should map them back to the values shown here:
 
-| chatcore field(s) | Storage type | SQL / Prisma type | Why |
+| messageweave field(s) | Storage type | SQL / Prisma type | Why |
 | --- | --- | --- | --- |
 | `createdAt`, `timestamp`, `sequenceId`, `value` | `number` | **`BigInt`** or integer | epoch-millis / counters, not `DateTime` |
 | `metadata`, `content` | JSON object | **`Json`** or serialized string | adapters must return a plain JSON object |
