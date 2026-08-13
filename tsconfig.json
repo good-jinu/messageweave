@@ -10,7 +10,7 @@
       "path": "./packages/cli/tsconfig.json"
     },
     {
-      "path": "./packages/chatcore/tsconfig.json"
+      "path": "./packages/messageweave/tsconfig.json"
     }
   ]
 }

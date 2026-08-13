@@ -32,7 +32,7 @@ jobs:
           cache: pnpm
 
       # Install the SDK's deps so TypeDoc can resolve types (unadapter, zod)
-      # from packages/chatcore/src when generating the API reference.
+      # from packages/messageweave/src when generating the API reference.
       - name: Install workspace
         run: pnpm install --frozen-lockfile
 

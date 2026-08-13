@@ -71,7 +71,7 @@ importers:
         version: 0.29.2
       messageweave:
         specifier: workspace:*
-        version: link:../../packages/chatcore
+        version: link:../../packages/messageweave
     devDependencies:
       '@messageweave/cli':
         specifier: workspace:*
@@ -82,22 +82,6 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
-
-  packages/chatcore:
-    dependencies:
-      zod:
-        specifier: ^4.3.6
-        version: 4.3.6
-    devDependencies:
-      tsdown:
-        specifier: 'catalog:'
-        version: 0.21.1(@arethetypeswrong/core@0.18.2)(publint@0.3.17)(typescript@6.0.3)
-      typescript:
-        specifier: 'catalog:'
-        version: 6.0.3
-      vitest:
-        specifier: catalog:vitest
-        version: 4.1.5(@types/node@25.5.0)(@vitest/coverage-istanbul@4.1.5)(@vitest/ui@4.1.5)(vite@7.3.2(@types/node@25.5.0))
 
   packages/cli:
     dependencies:
@@ -111,6 +95,22 @@ importers:
       '@types/node':
         specifier: ^25.3.2
         version: 25.5.0
+      tsdown:
+        specifier: 'catalog:'
+        version: 0.21.1(@arethetypeswrong/core@0.18.2)(publint@0.3.17)(typescript@6.0.3)
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vitest:
+        specifier: catalog:vitest
+        version: 4.1.5(@types/node@25.5.0)(@vitest/coverage-istanbul@4.1.5)(@vitest/ui@4.1.5)(vite@7.3.2(@types/node@25.5.0))
+
+  packages/messageweave:
+    dependencies:
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
+    devDependencies:
       tsdown:
         specifier: 'catalog:'
         version: 0.21.1(@arethetypeswrong/core@0.18.2)(publint@0.3.17)(typescript@6.0.3)
@@ -1945,9 +1945,6 @@ packages:
     resolution: {integrity: sha512-D1mvvtDG0L5ft/jGWkLpG1+m0eQxOfaBvTNELraWj22wSVUMWxZUvYgJYcKh6jGGIkJFhH4IZPQhR4TKpc8mBw==}
     engines: {node: '>=10'}
 
-  zod@4.3.6:
-    resolution: {integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==}
-
   zod@4.4.3:
     resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
 
@@ -3693,7 +3690,5 @@ snapshots:
       string-width: 4.2.3
       y18n: 5.0.8
       yargs-parser: 20.2.9
-
-  zod@4.3.6: {}
 
   zod@4.4.3: {}

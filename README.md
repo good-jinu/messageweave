@@ -102,7 +102,7 @@ client needs to upload or download the underlying file.
 
 ## Development
 
-This is a pnpm monorepo. The SDK lives in `packages/chatcore`.
+This is a pnpm monorepo. The SDK lives in `packages/messageweave`.
 
 ```bash
 pnpm install

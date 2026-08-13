@@ -2,10 +2,10 @@
   "$schema": "https://typedoc.org/schema.json",
   "plugin": ["typedoc-plugin-markdown"],
   "entryPoints": [
-    "../packages/chatcore/src/index.ts",
-    "../packages/chatcore/src/test-utils/index.ts"
+    "../packages/messageweave/src/index.ts",
+    "../packages/messageweave/src/test-utils/index.ts"
   ],
-  "tsconfig": "../packages/chatcore/tsconfig.json",
+  "tsconfig": "../packages/messageweave/tsconfig.json",
   "out": "docs/api",
   "readme": "none",
   "excludePrivate": true,
