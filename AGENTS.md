@@ -7,7 +7,7 @@ gRPC) and the storage engine to the integrating developer.
 
 ## Project Structure
 
-- `packages/chatcore` — the SDK (`chatcore`)
+- `packages/messageweave` — the SDK (`messageweave`)
   - `src/types` — domain types (`FlowEvent`, `Room`, `EventEdge`, sync types)
   - `src/db` — `unadapter` schema (`tables.ts`), adapter wrapper (`adapter.ts`),
     monotonic sequence assignment (`sequence.ts`)

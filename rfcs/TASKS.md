@@ -3,7 +3,7 @@
 Tracks the work to deliver [0001-access-control.md](./0001-access-control.md)
 (Scoping Primitives & Integrity, v0.2). Tasks are grouped by RFC section and
 ordered roughly by dependency. File paths are relative to
-`packages/chatcore/src`.
+`packages/messageweave/src`.
 
 ## 1. Room-scoped sync (§3.1 — headline)
 

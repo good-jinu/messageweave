@@ -8,7 +8,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/good-jinu/messageweave.git",
-    "directory": "packages/chatcore"
+    "directory": "packages/messageweave"
   },
   "scripts": {
     "build": "tsdown",

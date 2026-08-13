@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "pnpm -C ../../packages/chatcore build && tsc --project tsconfig.json",
+    "build": "pnpm -C ../../packages/messageweave build && tsc --project tsconfig.json",
     "clean": "rm -rf dist",
     "db:init": "pnpm build && node dist/init-db.js",
     "db:reset": "rm -f data/chatcore.sqlite",
