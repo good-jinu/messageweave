@@ -3,10 +3,13 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "gen:api": "typedoc",
+    "api:generate": "node scripts/generate-api.mjs",
+    "prestart": "pnpm run api:generate",
+    "prebuild": "pnpm run api:generate",
     "docusaurus": "docusaurus",
-    "start": "pnpm run gen:api && docusaurus start",
-    "build": "pnpm run gen:api && docusaurus build",
+    "start": "docusaurus start",
+    "build": "docusaurus build",
+    "check": "pnpm run typecheck && pnpm run build",
     "serve": "docusaurus serve",
     "clear": "docusaurus clear",
     "typecheck": "tsc"

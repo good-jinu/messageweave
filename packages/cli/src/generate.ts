@@ -1,7 +1,7 @@
 import { Kysely, MysqlDialect, PostgresDialect, SqliteDialect } from "kysely";
 import { generate } from "unadapter/generate";
 import { kyselyAdapter } from "unadapter/kysely";
-import { getChatCoreTables } from "./schema";
+import { getMessageWeaveTables } from "./schema";
 
 export type ChatCoreSchemaDialect = "mysql" | "postgres" | "sqlite";
 
@@ -31,7 +31,7 @@ export async function generateChatCoreSchema(
 	const db = createDriverlessKysely(options.dialect);
 	const adapter = kyselyAdapter(db, { type: options.dialect });
 	const sql = await generate(
-		getChatCoreTables,
+		getMessageWeaveTables,
 		{
 			database: adapter,
 			advanced: {

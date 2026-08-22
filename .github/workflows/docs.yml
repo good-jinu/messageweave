@@ -2,6 +2,8 @@ name: Docs
 
 on:
   push:
+    branches:
+      - main
     tags:
       - 'v*'
   workflow_dispatch:
@@ -41,8 +43,8 @@ jobs:
         run: pnpm install --frozen-lockfile
         working-directory: website
 
-      - name: Build docs site
-        run: pnpm run build
+      - name: Validate and build docs site
+        run: pnpm run check
         working-directory: website
 
       - name: Upload Pages artifact

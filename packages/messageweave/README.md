@@ -33,19 +33,36 @@ const { events, nextToken } = await flow.getSyncStream({ sinceSequenceId: 0 });
 ## Choosing a database
 
 ChatCore persists through a storage backend passed as `options.storage`.
-The application owns the database integration:
+MessageWeave provides optional entry points for Unadapter's supported database
+clients while keeping Unadapter itself out of application code.
+
+For Drizzle, pass your database client and the same schema object used to create
+it:
 
 ```ts
 import { createChatCore } from "messageweave";
-import { createChatCoreStorage } from "./storage";
+import { drizzleStorage } from "messageweave/drizzle";
 
 const flow = createChatCore({
-  storage: createChatCoreStorage(db),
+	storage: drizzleStorage(db, {
+		provider: "pg",
+		schema,
+	}),
 });
 ```
 
-You can also provide a custom implementation of ChatCore's `ChatCoreStorage`
-interface.
+Install only the database library you use; `unadapter` is an internal
+MessageWeave dependency and is not imported or configured by applications.
+When provisioning with a non-default CLI `--id-strategy`, pass the same
+`idStrategy` to the storage helper.
+
+See the [Database Adapters guide](https://good-jinu.github.io/messageweave/database-adapters)
+for setup examples. The generated
+[API reference](https://good-jinu.github.io/messageweave/api/) lists every
+currently exported adapter and option.
+
+You can still provide a custom `ChatCoreStorage` implementation when you need a
+different database client or storage architecture.
 
 **Sequencing & atomicity.** ChatCore's current storage layer exposes no
 cross-statement transaction primitive, so `publishEvent` is serialized

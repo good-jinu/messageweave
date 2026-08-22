@@ -35,8 +35,10 @@ const { events, nextToken } = await flow.getSyncStream({ sinceSequenceId: 0 });
 ```
 
 :::note Production storage
-For production, pass `createChatCore` a storage backend. Apps implement
-ChatCore's `ChatCoreStorage` interface with their database library of choice.
+For production, use a database-specific storage entry point such as
+`messageweave/drizzle` or `messageweave/prisma`. Unadapter powers these entry
+points internally, but application code does not import or configure it. See
+**[Database Adapters](./database-adapters.md)** for setup examples.
 :::
 
 ## Testing helper
@@ -48,17 +50,8 @@ const { flow, db } = getTestInstance();
 // `flow` is a ChatCore engine, `db` is the raw in-memory store for assertions.
 ```
 
-## Engine API at a glance
+## API reference
 
-| Method | Description |
-| --- | --- |
-| `createRoom({ creatorId, metadata? })` | Create an isolated conversation boundary. |
-| `getRoom(roomId)` | Fetch a room, or `null`. |
-| `listRooms({ limit?, order? })` | List rooms by creation time. |
-| `sendMessage({ roomId, senderId, body, parentEventIds? })` | Publish a plain-text message, optionally as a reply. |
-| `publishEvent({ roomId, senderId, type, stateKey?, content?, parentEventIds? })` | Append an immutable event; returns `{ event, sequenceId }`. |
-| `getRoomState(roomId)` | The active state events (latest per `[type, stateKey]`). |
-| `getRoomTimeline(roomId, { limit?, beforeSequenceId? })` | A room's events, newest-first. |
-| `getSyncStream({ sinceSequenceId?, limit? })` | Global stream of events after a token, oldest-first. |
-
-See the full **[API Reference](./api/index.md)** for every type and signature.
+The **[API Reference](./api/index.md)** is generated directly from MessageWeave's
+source TSDoc before every docs build, so it always reflects the exported
+functions, types, and adapter options.

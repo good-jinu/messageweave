@@ -40,7 +40,8 @@
   },
   "dependencies": {
     "kysely": "^0.29.2",
-    "unadapter": "^0.3.0"
+    "messageweave": "workspace:*",
+    "unadapter": "^0.3.1"
   },
   "devDependencies": {
     "@types/node": "^25.3.2",

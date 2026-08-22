@@ -9,22 +9,25 @@ gRPC) and the storage engine to the integrating developer.
 
 - `packages/messageweave` — the SDK (`messageweave`)
   - `src/types` — domain types (`FlowEvent`, `Room`, `EventEdge`, sync types)
-  - `src/db` — `unadapter` schema (`tables.ts`), adapter wrapper (`adapter.ts`),
-    monotonic sequence assignment (`sequence.ts`)
+  - `src/db` — storage adapter wrapper and monotonic sequence assignment
+  - `src/adapters` — built-in database entry points backed internally by
+    `unadapter`
+  - `src/schema.ts` — framework-neutral canonical storage schema
   - `src/engine` — pipelines: `rooms`, `publish`, `state`, `timeline`, `sync`
   - `src/test-utils` — `getTestInstance()` + a corrected in-memory adapter
 
 ## Database layer
 
-- Storage is delegated to [`unadapter`](https://www.npmjs.com/package/unadapter).
-  The engine defines its schema with `createTable` and builds a CRUD adapter via
-  `createAdapter(tables, { database })`; the developer plugs in any unadapter
-  backend (`unadapter/memory`, `unadapter/drizzle`, `unadapter/kysely`, …).
-- unadapter exposes no transaction primitive, so `publishEvent` is serialized
-  in-process to keep `sequenceId` strictly increasing (see `src/db/sequence.ts`).
-- unadapter's bundled `unadapter/memory` adapter treats range operators
-  (`gt`/`lt`/…) as `eq`. Tests use the corrected adapter in
-  `src/test-utils/memory-adapter.ts` instead.
+- The engine depends only on the public `ChatCoreStorage` contract. Applications
+  may provide a custom implementation or use the `messageweave/drizzle`,
+  `messageweave/prisma`, `messageweave/kysely`, `messageweave/knex`,
+  `messageweave/mongodb`, and `messageweave/sumak` entry points.
+- Built-in database entry points use
+  [`unadapter`](https://www.npmjs.com/package/unadapter) internally. Do not expose
+  Unadapter configuration or require application code to import it.
+- `ChatCoreStorage` exposes no transaction primitive, so `publishEvent` is
+  serialized in-process to keep `sequenceId` strictly increasing (see
+  `src/db/sequence.ts`).
 
 ## Commands
 
@@ -49,6 +52,18 @@ gRPC) and the storage engine to the integrating developer.
 - Tests use Vitest. Use `getTestInstance()` from `chatcore/test`; it
   returns `{ flow, db }` backed by the in-memory adapter.
 - Regression tests: add `@see` comment with the issue URL above `it()`/`describe()`.
+
+## Documentation
+
+- Public exports and their top-level types must have TSDoc comments. TypeDoc
+  treats missing documentation, broken links, and unresolved exports as errors.
+- Do not hand-copy API signatures or option tables into Markdown. The website
+  discovers public entry points from `packages/messageweave/package.json` and
+  generates the API reference before every start and build.
+- Keep handwritten docs focused on workflows, concepts, and operational
+  guidance that cannot be derived from source types.
+- Run `pnpm docs:check` to typecheck the website, regenerate the API reference,
+  and build Docusaurus exactly as CI does.
 
 ## Important Development Notes
 

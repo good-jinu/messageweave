@@ -2,6 +2,7 @@
   "extends": "@docusaurus/tsconfig",
   "compilerOptions": {
     "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
     "lib": ["DOM", "DOM.Iterable", "ESNext", "ESNext.Temporal"]
   },
   "exclude": [".docusaurus", "build", "docs/api"]

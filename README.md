@@ -41,16 +41,24 @@ await flow.publishEvent({
 const { events, nextToken } = await flow.getSyncStream({ sinceSequenceId: 0 });
 ```
 
-For production, pass `createChatCore` a storage implementation:
+For production, use one of MessageWeave's optional database entry points:
 
 ```ts
 import { createChatCore } from "messageweave";
-import { createChatCoreStorage } from "./storage";
+import { drizzleStorage } from "messageweave/drizzle";
 
 const flow = createChatCore({
-  storage: createChatCoreStorage(db),
+  storage: drizzleStorage(db, {
+    provider: "pg",
+    schema,
+  }),
 });
 ```
+
+Equivalent entry points are available for Prisma, Kysely, Knex, MongoDB, and
+Sumak. Applications can also provide a custom `ChatCoreStorage` implementation.
+Unadapter powers the built-in integrations internally but is not part of
+application code.
 
 Generate starter SQL for ChatCore's storage tables with the separate CLI
 package:
@@ -89,16 +97,11 @@ Do not put object-store keys, credentials, or permanent signed URLs in event
 content. Resolve the opaque attachment id through the host application when a
 client needs to upload or download the underlying file.
 
-## Engine API
+## API reference
 
-| Method | Description |
-| --- | --- |
-| `createRoom({ creatorId, metadata? })` | Create an isolated conversation boundary. |
-| `getRoom(roomId)` | Fetch a room, or `null`. |
-| `publishEvent({ roomId, senderId, type, stateKey?, content?, parentEventIds? })` | Append an immutable event; returns `{ event, sequenceId }`. |
-| `getRoomState(roomId)` | The active state events (latest per `[type, stateKey]`). |
-| `getRoomTimeline(roomId, { limit?, beforeSequenceId? })` | A room's events, newest-first. |
-| `getSyncStream({ sinceSequenceId?, limit?, roomIds? })` | Stream of events after a token, oldest-first. Omit `roomIds` for the global stream. |
+The complete API reference is generated from the source TSDoc on every docs
+build. See the [MessageWeave API reference](https://good-jinu.github.io/messageweave/api/)
+for current functions, types, and adapter options.
 
 ## Development
 

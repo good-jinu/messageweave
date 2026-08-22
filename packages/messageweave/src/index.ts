@@ -6,6 +6,7 @@ export type {
 	ChatCoreStorageRow,
 	ChatCoreStorageValue,
 	ChatCoreStorageWhere,
+	MessageWeaveStorageIdStrategy,
 } from "./storage";
 export type * from "./types";
 export { generateId } from "./utils/id";

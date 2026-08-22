@@ -24,16 +24,24 @@ import type {
 export interface ChatCore {
 	/** The resolved options. */
 	readonly options: ChatCoreOptions;
+	/** Create a conversation room. */
 	createRoom(input: CreateRoomInput): Promise<Room>;
+	/** Fetch a room by id, or return `null` when it does not exist. */
 	getRoom(roomId: string): Promise<Room | null>;
+	/** List rooms ordered by creation time. */
 	listRooms(options?: ListRoomsOptions): Promise<Room[]>;
+	/** Append an immutable event to a room. */
 	publishEvent(input: PublishEventInput): Promise<PublishEventResult>;
+	/** Append a plain-text message event to a room. */
 	sendMessage(input: SendMessageInput): Promise<PublishEventResult>;
+	/** Read the latest state event for every state key in a room. */
 	getRoomState(roomId: string): Promise<FlowEvent[]>;
+	/** Read a page of a room's event timeline. */
 	getRoomTimeline(
 		roomId: string,
 		options?: GetTimelineOptions,
 	): Promise<FlowEvent[]>;
+	/** Read globally ordered events after a synchronization cursor. */
 	getSyncStream(options?: GetSyncStreamOptions): Promise<SyncStreamResult>;
 }
 

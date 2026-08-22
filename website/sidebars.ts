@@ -2,13 +2,14 @@ import type { SidebarsConfig } from "@docusaurus/plugin-content-docs";
 
 /**
  * The hand-curated docs sidebar. The API Reference section is populated from
- * the TypeDoc-generated markdown in `docs/api/` (created by `pnpm run gen:api`
- * before every build), so those files must exist when Docusaurus loads.
+ * the TypeDoc-generated markdown in `docs/api/` (created automatically before
+ * every start and build), so those files must exist when Docusaurus loads.
  */
 const sidebars: SidebarsConfig = {
 	docsSidebar: [
 		"intro",
 		"getting-started",
+		"database-adapters",
 		{
 			type: "category",
 			label: "Concepts",

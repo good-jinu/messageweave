@@ -21,6 +21,8 @@
     "test": "pnpm -r test",
     "typecheck": "tsc --build",
     "docs:build": "pnpm -C website run build",
+    "docs:check": "pnpm -C website run check",
+    "docs:api": "pnpm -C website run api:generate",
     "docs:start": "pnpm -C website run start"
   },
   "devDependencies": {

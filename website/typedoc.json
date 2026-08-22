@@ -1,12 +1,9 @@
 {
   "$schema": "https://typedoc.org/schema.json",
   "plugin": ["typedoc-plugin-markdown"],
-  "entryPoints": [
-    "../packages/messageweave/src/index.ts",
-    "../packages/messageweave/src/test-utils/index.ts"
-  ],
   "tsconfig": "../packages/messageweave/tsconfig.json",
   "out": "docs/api",
+  "cleanOutputDir": true,
   "readme": "none",
   "excludePrivate": true,
   "excludeInternal": true,
@@ -20,5 +17,20 @@
   "indexFormat": "table",
   "parametersFormat": "table",
   "interfacePropertiesFormat": "table",
-  "intentionallyNotExported": ["Row"]
+  "treatWarningsAsErrors": true,
+  "requiredToBeDocumented": [
+    "Variable",
+    "Function",
+    "Class",
+    "Interface",
+    "TypeAlias",
+    "Property",
+    "Method"
+  ],
+  "validation": {
+    "invalidLink": true,
+    "notDocumented": true,
+    "notExported": true
+  },
+  "intentionallyNotExported": ["ChatCoreErrorConstructor"]
 }

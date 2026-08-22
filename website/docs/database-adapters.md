@@ -1,0 +1,133 @@
+---
+id: database-adapters
+title: Database Adapters
+sidebar_position: 3
+---
+
+# Database Adapters
+
+MessageWeave's engine accepts the stable `ChatCoreStorage` interface. Built-in
+entry points adapt common database clients to that interface while keeping
+Unadapter as an internal MessageWeave implementation detail.
+
+Install `messageweave` and only the database client you use. You do not need to
+install or import `unadapter` directly.
+
+## Drizzle
+
+Pass the Drizzle client and the schema object containing MessageWeave's tables:
+
+```ts
+import { createChatCore } from "messageweave";
+import { drizzleStorage } from "messageweave/drizzle";
+
+const flow = createChatCore({
+  storage: drizzleStorage(db, {
+    provider: "pg",
+    schema,
+  }),
+});
+```
+
+Valid providers are `pg`, `mysql`, and `sqlite`.
+
+## Prisma
+
+Pass the generated Prisma client and its database provider:
+
+```ts
+import { createChatCore } from "messageweave";
+import { prismaStorage } from "messageweave/prisma";
+
+const flow = createChatCore({
+  storage: prismaStorage(prisma, {
+    provider: "postgresql",
+  }),
+});
+```
+
+Your Prisma schema must include MessageWeave's models, and you must regenerate
+the Prisma client after changing them.
+
+## Kysely and Knex
+
+```ts
+import { createChatCore } from "messageweave";
+import { kyselyStorage } from "messageweave/kysely";
+
+const flow = createChatCore({
+  storage: kyselyStorage(db, { type: "postgres" }),
+});
+```
+
+Use `knexStorage` from `messageweave/knex` for a Knex client. SQL-backed Kysely,
+Knex, and Sumak integrations accept `postgres`, `mysql`, `sqlite`, or `mssql`.
+
+## MongoDB
+
+```ts
+import { createChatCore } from "messageweave";
+import { mongodbStorage } from "messageweave/mongodb";
+
+const flow = createChatCore({
+  storage: mongodbStorage(db),
+});
+```
+
+Here `db` is a MongoDB `Db` instance.
+
+## Generate the SQL schema
+
+For PostgreSQL, MySQL, or SQLite, the CLI generates the five required tables:
+
+```bash
+pnpm dlx @messageweave/cli schema generate \
+  --dialect postgres \
+  --out migrations/001_messageweave.sql
+```
+
+The generated DDL is based on the same canonical schema used by the built-in
+storage entry points. It works independently of whether runtime queries use
+Drizzle, Prisma, Kysely, Knex, Sumak, or raw SQL.
+
+The CLI creates database tables; it does not replace ORM metadata. Drizzle still
+needs corresponding table definitions, and Prisma still needs corresponding
+models in `schema.prisma`.
+
+### ID strategy
+
+String IDs generated in application code are the default. For another strategy,
+use the same value in both the CLI and the storage helper:
+
+```bash
+pnpm dlx @messageweave/cli schema generate \
+  --dialect postgres \
+  --id-strategy uuid \
+  --out migrations/001_messageweave.sql
+```
+
+```ts
+const storage = drizzleStorage(db, {
+  provider: "pg",
+  schema,
+  idStrategy: "uuid",
+});
+```
+
+Supported SQL strategies are `string`, `uuid`, `serial`, and `number`. Ensure
+the selected strategy is supported by the database dialect and reflected in the
+ORM schema.
+
+## Custom storage
+
+Database clients without a built-in entry point can implement
+`ChatCoreStorage` directly:
+
+```ts
+import { createChatCore, type ChatCoreStorage } from "messageweave";
+
+const storage: ChatCoreStorage = createCustomStorage();
+const flow = createChatCore({ storage });
+```
+
+This keeps the engine independent of any particular database library.

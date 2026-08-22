@@ -3,6 +3,7 @@ import type { JsonObject, JsonValue } from "../types";
 
 /** Thrown when an SDK method receives invalid input. */
 export interface ChatCoreError extends Error {
+	/** Stable error name for runtime narrowing. */
 	name: "ChatCoreError";
 }
 
@@ -29,6 +30,7 @@ Object.defineProperty(ChatCoreErrorImpl.prototype, "constructor", {
 	configurable: true,
 });
 
+/** Error constructor used for invalid MessageWeave inputs and operations. */
 export const ChatCoreError = ChatCoreErrorImpl as ChatCoreErrorConstructor;
 
 const jsonValueSchema: z.ZodType<JsonValue> = z.lazy(() =>
