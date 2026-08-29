@@ -1,5 +1,5 @@
 ---
-"messageweave": major
+"messageweave": minor
 ---
 
 Refactor database adapter naming conventions and improve Prisma adapter DX.
