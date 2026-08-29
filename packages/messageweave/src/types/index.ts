@@ -150,6 +150,34 @@ export interface SendMessageInput {
 	parentEventIds?: string[];
 }
 
+/** Input for {@link ChatCore.editMessage}. */
+export interface EditMessageInput {
+	/** Room containing the message being edited. */
+	roomId: string;
+	/** Entity performing the edit. */
+	senderId: string;
+	/** Identifier of the message event being edited. */
+	messageId: string;
+	/** Updated message body. Whitespace-only messages are rejected. */
+	body: string;
+	/** Optional additional JSON metadata for the edit event. */
+	content?: JsonObject;
+}
+
+/** Input for {@link ChatCore.deleteMessage}. */
+export interface DeleteMessageInput {
+	/** Room containing the message being deleted. */
+	roomId: string;
+	/** Entity performing the deletion. */
+	senderId: string;
+	/** Identifier of the message event being deleted. */
+	messageId: string;
+	/** Optional reason or metadata explaining the deletion. */
+	reason?: string;
+	/** Optional additional JSON metadata for the delete event. */
+	content?: JsonObject;
+}
+
 /** Result of {@link ChatCore.publishEvent}. */
 export interface PublishEventResult {
 	/** Persisted event. */
@@ -202,4 +230,55 @@ export interface SyncStreamResult {
 	 * global page boundary so clients do not repeatedly scan out-of-scope gaps.
 	 */
 	nextToken: number;
+}
+
+/**
+ * A UI-ready presentation message computed by folding raw event streams
+ * (including edits, reactions, and deletions).
+ */
+export interface ProjectedMessage {
+	/** Identifier of the root message event. */
+	id: string;
+	/** Conversation room identifier. */
+	roomId: string;
+	/** Entity that originally sent the message. */
+	senderId: string;
+	/** Message event type (typically `message.text`). */
+	type: string;
+	/** Current effective message body text. Empty string if deleted. */
+	body: string;
+	/** Merged effective event content payload. */
+	content: JsonObject;
+	/** Original message creation timestamp in epoch milliseconds. */
+	timestamp: number;
+	/** Sequence ID of the original message event. */
+	sequenceId: number;
+	/** Whether this message has been edited at least once. */
+	isEdited: boolean;
+	/** Timestamp of the most recent edit in epoch milliseconds, or `null`. */
+	editedAt: number | null;
+	/** Sequence ID of the most recent edit, or `null`. */
+	lastEditSequenceId: number | null;
+	/** Whether this message has been deleted / tombstoned. */
+	isDeleted: boolean;
+	/** Timestamp when the message was deleted in epoch milliseconds, or `null`. */
+	deletedAt: number | null;
+	/** Deletion reason if provided, or `null`. */
+	deleteReason: string | null;
+	/** Number of times this message was edited. */
+	editCount: number;
+	/** The root message event and all revision/tombstone events linked to it. */
+	rawEvents: FlowEvent[];
+}
+
+/** Options for {@link projectTimeline}. */
+export interface ProjectTimelineOptions {
+	/**
+	 * When true (default), deleted messages are included in the projected result
+	 * with `isDeleted: true` and empty/tombstone body.
+	 * When false, deleted messages are filtered out of the output array.
+	 *
+	 * @default true
+	 */
+	includeDeleted?: boolean;
 }

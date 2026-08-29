@@ -225,17 +225,100 @@ input:disabled {
 	background: #eef8fa;
 }
 
-.message-meta {
+.message-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
 	margin-bottom: 6px;
+}
+
+.message-meta {
 	color: #6d716f;
 	font-size: 12px;
 	font-weight: 800;
+}
+
+.edited-badge {
+	margin-left: 4px;
+	color: #8c918f;
+	font-size: 11px;
+	font-weight: 600;
+}
+
+.message-actions {
+	display: flex;
+	gap: 4px;
+	opacity: 0.7;
+}
+
+.message:hover .message-actions {
+	opacity: 1;
+}
+
+.action-btn {
+	border-radius: 4px;
+	padding: 2px 6px;
+	background: rgba(0, 0, 0, 0.05);
+	color: #555b58;
+	font-size: 11px;
+	font-weight: 700;
+}
+
+.action-btn:hover {
+	background: rgba(0, 0, 0, 0.12);
+	color: #202124;
+}
+
+.action-btn.delete-btn:hover {
+	background: #f5d7d2;
+	color: #954033;
 }
 
 .message p {
 	margin: 0;
 	line-height: 1.45;
 	overflow-wrap: anywhere;
+}
+
+.message-tombstone {
+	color: #8c918f;
+	font-style: italic;
+}
+
+.edit-form {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin-top: 4px;
+}
+
+.edit-form input {
+	padding: 6px 8px;
+	font-size: 14px;
+}
+
+.edit-form-actions {
+	display: flex;
+	gap: 6px;
+	justify-content: flex-end;
+}
+
+.edit-form-actions button {
+	border-radius: 4px;
+	padding: 4px 10px;
+	font-size: 12px;
+	font-weight: 700;
+}
+
+.edit-save-btn {
+	background: #31708e;
+	color: white;
+}
+
+.edit-cancel-btn {
+	background: #e4decb;
+	color: #59544d;
 }
 
 .composer {

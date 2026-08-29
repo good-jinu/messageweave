@@ -72,6 +72,24 @@ const sendMessageSchema = z.object({
 	parentEventIds: z.array(z.string().min(1)).optional(),
 });
 
+const editMessageSchema = z.object({
+	roomId: z.string().min(1, "roomId is required"),
+	senderId: z.string().min(1, "senderId is required"),
+	messageId: z.string().min(1, "messageId is required"),
+	body: z
+		.string()
+		.refine((value) => value.trim().length > 0, "body is required"),
+	content: jsonObjectSchema.optional(),
+});
+
+const deleteMessageSchema = z.object({
+	roomId: z.string().min(1, "roomId is required"),
+	senderId: z.string().min(1, "senderId is required"),
+	messageId: z.string().min(1, "messageId is required"),
+	reason: z.string().optional(),
+	content: jsonObjectSchema.optional(),
+});
+
 /** Validate and normalize {@link createRoom} input, throwing on error. */
 export function parseCreateRoomInput(input: unknown) {
 	const result = createRoomSchema.safeParse(input);
@@ -100,6 +118,28 @@ export function parseSendMessageInput(input: unknown) {
 	if (!result.success) {
 		throw new ChatCoreError(
 			`Invalid sendMessage input: ${result.error.issues.map((i) => i.message).join(", ")}`,
+		);
+	}
+	return result.data;
+}
+
+/** Validate and normalize {@link editMessage} input, throwing on error. */
+export function parseEditMessageInput(input: unknown) {
+	const result = editMessageSchema.safeParse(input);
+	if (!result.success) {
+		throw new ChatCoreError(
+			`Invalid editMessage input: ${result.error.issues.map((i) => i.message).join(", ")}`,
+		);
+	}
+	return result.data;
+}
+
+/** Validate and normalize {@link deleteMessage} input, throwing on error. */
+export function parseDeleteMessageInput(input: unknown) {
+	const result = deleteMessageSchema.safeParse(input);
+	if (!result.success) {
+		throw new ChatCoreError(
+			`Invalid deleteMessage input: ${result.error.issues.map((i) => i.message).join(", ")}`,
 		);
 	}
 	return result.data;

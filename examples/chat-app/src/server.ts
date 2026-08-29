@@ -542,6 +542,67 @@ async function handleApi(
 		return;
 	}
 
+	const singleMessageMatch = url.pathname.match(
+		/^\/api\/rooms\/([^/]+)\/messages\/([^/]+)$/,
+	);
+	if (
+		request.method === "PATCH" &&
+		singleMessageMatch?.[1] !== undefined &&
+		singleMessageMatch?.[2] !== undefined
+	) {
+		const roomId = decodeURIComponent(singleMessageMatch[1]);
+		const messageId = decodeURIComponent(singleMessageMatch[2]);
+		if (!rooms.has(roomId)) {
+			jsonResponse(response, 404, { error: "Room not found" });
+			return;
+		}
+		const input = await readJson(request);
+		const body = asString(input.body);
+		if (body.length === 0) {
+			jsonResponse(response, 400, { error: "Message body is required" });
+			return;
+		}
+		const senderId = asString(input.senderId, "guest");
+		const displayName = asString(input.displayName, senderId);
+		const { event } = await flow.editMessage({
+			roomId,
+			senderId,
+			messageId,
+			body,
+			content: { displayName },
+		});
+		const payload: SsePayload = { type: "event", event: serializeEvent(event) };
+		broadcast(payload);
+		jsonResponse(response, 200, { event: payload.event });
+		return;
+	}
+
+	if (
+		request.method === "DELETE" &&
+		singleMessageMatch?.[1] !== undefined &&
+		singleMessageMatch?.[2] !== undefined
+	) {
+		const roomId = decodeURIComponent(singleMessageMatch[1]);
+		const messageId = decodeURIComponent(singleMessageMatch[2]);
+		if (!rooms.has(roomId)) {
+			jsonResponse(response, 404, { error: "Room not found" });
+			return;
+		}
+		const input = await readJson(request);
+		const senderId = asString(input.senderId, "guest");
+		const reason = asString(input.reason, "Deleted by user");
+		const { event } = await flow.deleteMessage({
+			roomId,
+			senderId,
+			messageId,
+			reason,
+		});
+		const payload: SsePayload = { type: "event", event: serializeEvent(event) };
+		broadcast(payload);
+		jsonResponse(response, 200, { event: payload.event });
+		return;
+	}
+
 	if (request.method === "GET" && url.pathname === "/api/events") {
 		response.writeHead(200, {
 			"cache-control": "no-cache, no-transform",

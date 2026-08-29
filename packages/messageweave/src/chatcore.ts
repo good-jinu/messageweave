@@ -9,6 +9,8 @@ import { createTimelineMethods } from "./engine/timeline";
 import type { ChatCoreOptions } from "./options";
 import type {
 	CreateRoomInput,
+	DeleteMessageInput,
+	EditMessageInput,
 	FlowEvent,
 	GetSyncStreamOptions,
 	GetTimelineOptions,
@@ -34,6 +36,10 @@ export interface ChatCore {
 	publishEvent(input: PublishEventInput): Promise<PublishEventResult>;
 	/** Append a plain-text message event to a room. */
 	sendMessage(input: SendMessageInput): Promise<PublishEventResult>;
+	/** Publish an edit revision for an existing message in a room. */
+	editMessage(input: EditMessageInput): Promise<PublishEventResult>;
+	/** Publish a tombstone event deleting an existing message in a room. */
+	deleteMessage(input: DeleteMessageInput): Promise<PublishEventResult>;
 	/** Read the latest state event for every state key in a room. */
 	getRoomState(roomId: string): Promise<FlowEvent[]>;
 	/** Read a page of a room's event timeline. */
@@ -75,7 +81,8 @@ export function createChatCore(options: ChatCoreOptions): ChatCore {
 	const { publishEvent } = createPublishMethod(adapter, sequencer, {
 		maxContentBytes: options.maxContentBytes,
 	});
-	const { sendMessage } = createMessageMethods(publishEvent);
+	const { sendMessage, editMessage, deleteMessage } =
+		createMessageMethods(publishEvent);
 	const { getRoomState } = createStateMethods(adapter);
 	const { getRoomTimeline } = createTimelineMethods(adapter, defaultLimit);
 	const { getSyncStream } = createSyncMethods(adapter, defaultLimit);
@@ -87,6 +94,8 @@ export function createChatCore(options: ChatCoreOptions): ChatCore {
 		listRooms,
 		publishEvent,
 		sendMessage,
+		editMessage,
+		deleteMessage,
 		getRoomState,
 		getRoomTimeline,
 		getSyncStream,
