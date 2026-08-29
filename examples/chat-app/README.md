@@ -15,6 +15,15 @@ The example uses `better-sqlite3` and Kysely directly. The host app provisions
 ChatCore's five tables from CLI-generated SQL, implements ChatCore's storage
 interface with Kysely, then passes that storage object into `createChatCore`.
 
+## Event-Sourced Operations
+
+ChatCore persists all actions as immutable events (`FlowEvent`) and links parent/child relationships via `eventEdge`:
+
+- **Sending a message (`message.text`)**: Publishes a new event assigned a monotonic `sequenceId`.
+- **Editing a message (`message.edit`)**: Publishes a revision event linking back to the target message via `eventEdge` (`parentEventId`) and `content.targetMessageId`.
+- **Deleting a message (`message.delete`)**: Publishes a tombstone event targeting the original message.
+- **Client Synchronization**: Real-time sync streams fetch events using `sinceSequenceId`.
+
 ## Run
 
 From the repository root:

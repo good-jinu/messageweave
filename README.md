@@ -15,6 +15,27 @@ engine are left entirely in your hands.
 - **Host-owned attachments** — events can carry portable attachment references
   while the host application owns file storage, authorization, and delivery.
 
+## Walkthrough & Event Sourcing Flow
+
+1. **User A sends "Hello"**
+   - `sequenceId` becomes `101`.
+   - `event` row inserted: `id = "evt_01"`, `type = "message.text"`, `content = { body: "Hello" }`.
+   - `eventEdge` row: *None* (Root message).
+
+2. **User B replies "Hi!"**
+   - `sequenceId` becomes `102`.
+   - `event` row inserted: `id = "evt_02"`, `type = "message.text"`, `content = { body: "Hi!" }`.
+   - `eventEdge` row inserted: `eventId = "evt_02"`, `parentEventId = "evt_01"`.
+
+3. **User A edits original message**
+   - `sequenceId` becomes `103`.
+   - `event` row inserted: `id = "evt_03"`, `type = "message.edit"`, `content = { targetMessageId: "evt_01", body: "Hello!!" }`.
+   - `eventEdge` row inserted: `eventId = "evt_03"`, `parentEventId = "evt_01"`.
+
+- **Chronological View:** Order by `sequenceId` (`101 → 102 → 103`) for real-time sync streams.
+- **Threaded View:** Follow `eventEdge` links (`evt_01` → reply `evt_02`).
+- **Projected View:** `projectTimeline(events)` folds edit `evt_03` into root `evt_01` (`body: "Hello!!"`, `isEdited: true`).
+
 ## Install
 
 ```bash

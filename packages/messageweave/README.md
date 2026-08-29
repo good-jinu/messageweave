@@ -30,6 +30,29 @@ const { events, nextToken } = await flow.getSyncStream({ sinceSequenceId: 0 });
   pointing at the latest state event, so current state is read without replaying
   the whole timeline.
 
+### Event Sourcing & DAG Flow Walkthrough
+
+Every interaction in MessageWeave is an immutable `FlowEvent`. Chronological synchronization uses `sequenceId`, while parent/child relationships (like thread replies or edits) use `EventEdge` references (linking event string `id`s).
+
+1. **User A sends "Hello"**
+   - `sequenceId`: `101`
+   - `event` inserted: `id = "evt_01"`, `type = "message.text"`, `content = { body: "Hello" }`.
+   - `eventEdge`: *None* (Root message).
+
+2. **User B replies "Hi!"**
+   - `sequenceId`: `102`
+   - `event` inserted: `id = "evt_02"`, `type = "message.text"`, `content = { body: "Hi!" }`.
+   - `eventEdge` inserted: `eventId = "evt_02"`, `parentEventId = "evt_01"` (Reply edge).
+
+3. **User A edits original message**
+   - `sequenceId`: `103`
+   - `event` inserted: `id = "evt_03"`, `type = "message.edit"`, `content = { targetMessageId: "evt_01", body: "Hello!!" }`.
+   - `eventEdge` inserted: `eventId = "evt_03"`, `parentEventId = "evt_01"` (Mutation edge).
+
+- **Chronological Sync:** Order by `sequenceId` (`101 → 102 → 103`) to drive real-time cursor sync.
+- **Threaded View:** Traverses `eventEdge` links (`evt_01` → replies `evt_02`).
+- **Projected View:** `projectTimeline(events)` folds edit (`evt_03`) into root message `evt_01` (`body: "Hello!!"`, `isEdited: true`).
+
 ## Choosing a database
 
 ChatCore persists through a storage backend passed as `options.storage`.
