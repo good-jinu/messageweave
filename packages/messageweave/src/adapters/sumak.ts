@@ -1,15 +1,15 @@
 import type { Sumak } from "sumak";
-import { sumakAdapter } from "unadapter/sumak";
+import { sumakAdapter as unadapterSumak } from "unadapter/sumak";
 import type { MessageWeaveStorageIdStrategy } from "../storage";
 import { createUnadapterStorage } from "./unadapter";
 
 /** SQL dialect used by a Sumak-backed MessageWeave store. */
-export type SumakStorageDialect = "mssql" | "mysql" | "postgres" | "sqlite";
+export type SumakAdapterDialect = "mssql" | "mysql" | "postgres" | "sqlite";
 
-/** Options for {@link sumakStorage}. */
-export interface SumakStorageOptions {
+/** Options for {@link sumakAdapter}. */
+export interface SumakAdapterOptions {
 	/** Database dialect used by the Sumak client. */
-	type?: SumakStorageDialect;
+	type?: SumakAdapterDialect;
 	/** Whether table names use Unadapter's plural naming convention. */
 	usePlural?: boolean;
 	/** Enable Unadapter query diagnostics. */
@@ -19,10 +19,10 @@ export interface SumakStorageOptions {
 }
 
 /** Create MessageWeave storage backed by a Sumak database client. */
-export function sumakStorage<Database>(
+export function sumakAdapter<Database>(
 	db: Sumak<Database>,
-	options?: SumakStorageOptions,
+	options?: SumakAdapterOptions,
 ) {
 	const { idStrategy, ...adapterOptions } = options ?? {};
-	return createUnadapterStorage(sumakAdapter(db, adapterOptions), idStrategy);
+	return createUnadapterStorage(unadapterSumak(db, adapterOptions), idStrategy);
 }

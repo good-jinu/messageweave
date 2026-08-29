@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { drizzleStorage } from "./drizzle";
-import { prismaStorage } from "./prisma";
+import { drizzleAdapter } from "./drizzle";
+import { prismaAdapter } from "./prisma";
 
 describe("built-in database storage entry points", () => {
 	it("creates Drizzle storage without exposing Unadapter configuration", () => {
-		const storage = drizzleStorage(
+		const storage = drizzleAdapter(
 			{},
 			{ provider: "pg", schema: {}, idStrategy: "uuid" },
 		);
@@ -19,7 +19,7 @@ describe("built-in database storage entry points", () => {
 	});
 
 	it("creates Prisma storage without exposing Unadapter configuration", () => {
-		const storage = prismaStorage({}, { provider: "postgresql" });
+		const storage = prismaAdapter({}, { provider: "postgresql" });
 
 		expect(storage).toMatchObject({
 			create: expect.any(Function),

@@ -41,10 +41,10 @@ it:
 
 ```ts
 import { createChatCore } from "messageweave";
-import { drizzleStorage } from "messageweave/drizzle";
+import { drizzleAdapter } from "messageweave/drizzle";
 
 const flow = createChatCore({
-	storage: drizzleStorage(db, {
+	storage: drizzleAdapter(db, {
 		provider: "pg",
 		schema,
 	}),

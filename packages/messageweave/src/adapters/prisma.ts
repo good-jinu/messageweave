@@ -1,11 +1,11 @@
-import { prismaAdapter } from "unadapter/prisma";
+import { prismaAdapter as unadapterPrisma } from "unadapter/prisma";
 import type { MessageWeaveStorageIdStrategy } from "../storage";
 import { createUnadapterStorage } from "./unadapter";
 
-/** Options for {@link prismaStorage}. */
-export interface PrismaStorageOptions {
-	/** Database provider configured in `schema.prisma`. */
-	provider:
+/** Options for {@link prismaAdapter}. */
+export interface PrismaAdapterOptions {
+	/** Database provider configured in `schema.prisma`. Optional, will attempt to infer from client if missing. */
+	provider?:
 		| "cockroachdb"
 		| "mongodb"
 		| "mysql"
@@ -21,10 +21,18 @@ export interface PrismaStorageOptions {
 }
 
 /** Create MessageWeave storage backed by a Prisma client. */
-export function prismaStorage(prisma: object, options: PrismaStorageOptions) {
-	const { idStrategy, ...adapterOptions } = options;
+export function prismaAdapter(prisma: object, options?: PrismaAdapterOptions) {
+	const { idStrategy, provider, ...adapterOptions } = options ?? {};
+
+	const inferredProvider = provider ?? (prisma as any)?._engineConfig?.activeProvider ?? (prisma as any)?._activeProvider;
+	if (!inferredProvider) {
+		throw new Error(
+			"Could not infer Prisma provider from client. Please provide the `provider` option explicitly.",
+		);
+	}
+
 	return createUnadapterStorage(
-		prismaAdapter(prisma, adapterOptions),
+		unadapterPrisma(prisma, { provider: inferredProvider, ...adapterOptions }),
 		idStrategy,
 	);
 }
