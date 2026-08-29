@@ -6,14 +6,17 @@ import { generateChatCoreSchema } from "./generate";
 import { VERSION } from "./version";
 
 const USAGE = `Usage:
-  messageweave schema generate --dialect <sqlite|postgres|mysql> [--out <file>]
+  messageweave schema generate [--format <sql|drizzle|prisma>] [options]
 
 Options:
-  --dialect       SQL dialect to generate: sqlite, postgres, or mysql.
-  --out           Write SQL to a file instead of stdout.
-  --id-strategy   id column strategy: string, uuid, serial, or number.
-  -h, --help      Show this help message.
-  -v, --version   Show the CLI version.
+  --format              Format to generate: sql, drizzle, or prisma (default: sql).
+  --dialect             Database dialect (required for sql/drizzle): sqlite, postgres, or mysql.
+  --provider            Database provider for Prisma (default: postgresql): postgresql, mysql, sqlite, etc.
+  --include-datasource  Include datasource and generator client blocks in Prisma schema.
+  --id-strategy         id column strategy: string, uuid, serial, or number.
+  --out                 Write generated schema to a file instead of stdout.
+  -h, --help            Show this help message.
+  -v, --version         Show the CLI version.
 `;
 
 async function main(argv: string[]): Promise<void> {
@@ -34,15 +37,15 @@ async function main(argv: string[]): Promise<void> {
 		return;
 	}
 
-	const sql = await generateChatCoreSchema(parsed.command.options);
+	const schema = await generateChatCoreSchema(parsed.command.options);
 	if (parsed.command.options.out === undefined) {
-		process.stdout.write(ensureTrailingNewline(sql));
+		process.stdout.write(ensureTrailingNewline(schema));
 		return;
 	}
 
 	const outPath = resolve(parsed.command.options.out);
 	await mkdir(dirname(outPath), { recursive: true });
-	await writeFile(outPath, ensureTrailingNewline(sql), "utf8");
+	await writeFile(outPath, ensureTrailingNewline(schema), "utf8");
 	process.stdout.write(`Generated ChatCore schema: ${outPath}\n`);
 }
 
