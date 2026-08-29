@@ -19,10 +19,10 @@ Pass the Drizzle client and the schema object containing MessageWeave's tables:
 
 ```ts
 import { createChatCore } from "messageweave";
-import { drizzleStorage } from "messageweave/drizzle";
+import { drizzleAdapter } from "messageweave/drizzle";
 
 const flow = createChatCore({
-  storage: drizzleStorage(db, {
+  storage: drizzleAdapter(db, {
     provider: "pg",
     schema,
   }),
@@ -37,10 +37,10 @@ Pass the generated Prisma client and its database provider:
 
 ```ts
 import { createChatCore } from "messageweave";
-import { prismaStorage } from "messageweave/prisma";
+import { prismaAdapter } from "messageweave/prisma";
 
 const flow = createChatCore({
-  storage: prismaStorage(prisma, {
+  storage: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
 });
@@ -53,24 +53,24 @@ the Prisma client after changing them.
 
 ```ts
 import { createChatCore } from "messageweave";
-import { kyselyStorage } from "messageweave/kysely";
+import { kyselyAdapter } from "messageweave/kysely";
 
 const flow = createChatCore({
-  storage: kyselyStorage(db, { type: "postgres" }),
+  storage: kyselyAdapter(db, { type: "postgres" }),
 });
 ```
 
-Use `knexStorage` from `messageweave/knex` for a Knex client. SQL-backed Kysely,
+Use `knexAdapter` from `messageweave/knex` for a Knex client. SQL-backed Kysely,
 Knex, and Sumak integrations accept `postgres`, `mysql`, `sqlite`, or `mssql`.
 
 ## MongoDB
 
 ```ts
 import { createChatCore } from "messageweave";
-import { mongodbStorage } from "messageweave/mongodb";
+import { mongodbAdapter } from "messageweave/mongodb";
 
 const flow = createChatCore({
-  storage: mongodbStorage(db),
+  storage: mongodbAdapter(db),
 });
 ```
 
@@ -107,7 +107,7 @@ pnpm dlx @messageweave/cli schema generate \
 ```
 
 ```ts
-const storage = drizzleStorage(db, {
+const storage = drizzleAdapter(db, {
   provider: "pg",
   schema,
   idStrategy: "uuid",

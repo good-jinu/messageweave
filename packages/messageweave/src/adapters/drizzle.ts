@@ -1,12 +1,12 @@
-import { drizzleAdapter } from "unadapter/drizzle";
+import { drizzleAdapter as unadapterDrizzle } from "unadapter/drizzle";
 import type { MessageWeaveStorageIdStrategy } from "../storage";
 import { createUnadapterStorage } from "./unadapter";
 
 /** Database client shape accepted by Unadapter's Drizzle integration. */
 export type DrizzleDatabase = object;
 
-/** Options for {@link drizzleStorage}. */
-export interface DrizzleStorageOptions {
+/** Options for {@link drizzleAdapter}. */
+export interface DrizzleAdapterOptions {
 	/** Database provider used by the Drizzle client. */
 	provider: "mysql" | "pg" | "sqlite";
 	/** Drizzle table definitions keyed by MessageWeave model name. */
@@ -20,13 +20,16 @@ export interface DrizzleStorageOptions {
 }
 
 /** Create MessageWeave storage backed by a Drizzle database client. */
-export function drizzleStorage(
+export function drizzleAdapter(
 	db: DrizzleDatabase,
-	options: DrizzleStorageOptions,
+	options: DrizzleAdapterOptions,
 ) {
 	const { idStrategy, ...adapterOptions } = options;
 	return createUnadapterStorage(
-		drizzleAdapter(db as Parameters<typeof drizzleAdapter>[0], adapterOptions),
+		unadapterDrizzle(
+			db as Parameters<typeof unadapterDrizzle>[0],
+			adapterOptions,
+		),
 		idStrategy,
 	);
 }
