@@ -132,3 +132,15 @@ export function getMessageWeaveTables(): MessageWeaveSchema {
 
 	return tables;
 }
+
+export {
+	type GenerateDrizzleSchemaOptions,
+	type GenerateMessageWeaveSchemaOptions,
+	type GeneratePrismaSchemaOptions,
+	generateDrizzleSchema,
+	generateMessageWeaveSchema,
+	generatePrismaSchema,
+	type MessageWeaveDrizzleDialect,
+	type MessageWeavePrismaProvider,
+	type MessageWeaveSchemaIdStrategy,
+} from "./generate";

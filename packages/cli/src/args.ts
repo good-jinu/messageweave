@@ -1,6 +1,9 @@
 import type {
 	ChatCoreSchemaDialect,
+	ChatCoreSchemaFormat,
 	ChatCoreSchemaIdStrategy,
+	ChatCoreSchemaProvider,
+	GenerateChatCoreSchemaOptions,
 } from "./generate";
 
 export type CliCommand =
@@ -8,17 +11,25 @@ export type CliCommand =
 	| { type: "schema-generate"; options: SchemaGenerateCommandOptions }
 	| { type: "version" };
 
-export interface SchemaGenerateCommandOptions {
-	dialect: ChatCoreSchemaDialect;
-	idStrategy?: ChatCoreSchemaIdStrategy;
+export type SchemaGenerateCommandOptions = GenerateChatCoreSchemaOptions & {
 	out?: string;
-}
+};
 
 export type ParseCliArgsResult =
 	| { ok: true; command: CliCommand }
 	| { ok: false; message: string };
 
+const FORMATS = ["drizzle", "prisma", "sql"] as const;
 const DIALECTS = ["mysql", "postgres", "sqlite"] as const;
+const PRISMA_PROVIDERS = [
+	"cockroachdb",
+	"mongodb",
+	"mysql",
+	"postgres",
+	"postgresql",
+	"sqlite",
+	"sqlserver",
+] as const;
 const ID_STRATEGIES = ["number", "serial", "string", "uuid"] as const;
 
 export function parseCliArgs(argv: string[]): ParseCliArgsResult {
@@ -42,7 +53,10 @@ export function parseCliArgs(argv: string[]): ParseCliArgsResult {
 }
 
 function parseSchemaGenerateOptions(args: string[]): ParseCliArgsResult {
-	let dialect: ChatCoreSchemaDialect | undefined;
+	let format: ChatCoreSchemaFormat = "sql";
+	let dialect: string | undefined;
+	let provider: ChatCoreSchemaProvider | undefined;
+	let includeDatasource: boolean | undefined;
 	let idStrategy: ChatCoreSchemaIdStrategy | undefined;
 	let out: string | undefined;
 
@@ -50,19 +64,45 @@ function parseSchemaGenerateOptions(args: string[]): ParseCliArgsResult {
 		const token = args[index];
 		if (token === undefined) continue;
 
+		if (token === "--include-datasource") {
+			includeDatasource = true;
+			continue;
+		}
+
 		const option = parseOptionToken(token, args[index + 1]);
 		if (!option.ok) return option;
 
 		if (option.consumedNext) index += 1;
 
-		if (option.name === "--dialect") {
-			if (!isDialect(option.value)) {
+		if (option.name === "--format") {
+			if (!isFormat(option.value)) {
 				return {
 					ok: false,
-					message: `Invalid --dialect value: ${option.value}`,
+					message: `Invalid --format value: ${option.value}. Expected: sql, drizzle, prisma`,
 				};
 			}
+			format = option.value;
+			continue;
+		}
+
+		if (option.name === "--dialect") {
 			dialect = option.value;
+			continue;
+		}
+
+		if (option.name === "--provider") {
+			if (!isPrismaProvider(option.value)) {
+				return {
+					ok: false,
+					message: `Invalid --provider value: ${option.value}`,
+				};
+			}
+			provider = option.value;
+			continue;
+		}
+
+		if (option.name === "--include-datasource") {
+			includeDatasource = option.value === "true";
 			continue;
 		}
 
@@ -85,19 +125,67 @@ function parseSchemaGenerateOptions(args: string[]): ParseCliArgsResult {
 		return { ok: false, message: `Unknown option: ${option.name}` };
 	}
 
-	if (dialect === undefined) {
+	if (format === "sql" || format === "drizzle") {
+		if (dialect === undefined) {
+			return {
+				ok: false,
+				message: "Missing required option: --dialect <mysql|postgres|sqlite>",
+			};
+		}
+		if (!isDialect(dialect)) {
+			return {
+				ok: false,
+				message: `Invalid --dialect value: ${dialect}`,
+			};
+		}
+
 		return {
-			ok: false,
-			message: "Missing required option: --dialect <mysql|postgres|sqlite>",
+			ok: true,
+			command: {
+				type: "schema-generate",
+				options:
+					format === "drizzle"
+						? { format: "drizzle", dialect, idStrategy, out }
+						: { format: "sql", dialect, idStrategy, out },
+			},
+		};
+	}
+
+	if (format === "prisma") {
+		const targetProvider =
+			provider ??
+			(dialect && isPrismaProvider(dialect) ? dialect : undefined) ??
+			"postgresql";
+
+		if (
+			dialect !== undefined &&
+			provider === undefined &&
+			!isPrismaProvider(dialect)
+		) {
+			return {
+				ok: false,
+				message: `Invalid --dialect value for Prisma provider: ${dialect}`,
+			};
+		}
+
+		return {
+			ok: true,
+			command: {
+				type: "schema-generate",
+				options: {
+					format: "prisma",
+					provider: targetProvider,
+					includeDatasource,
+					idStrategy,
+					out,
+				},
+			},
 		};
 	}
 
 	return {
-		ok: true,
-		command: {
-			type: "schema-generate",
-			options: { dialect, idStrategy, out },
-		},
+		ok: false,
+		message: `Unsupported format: ${format}`,
 	};
 }
 
@@ -132,8 +220,16 @@ function parseOptionToken(
 	return { ok: true, consumedNext: true, name: token, value: nextToken };
 }
 
+function isFormat(value: string): value is ChatCoreSchemaFormat {
+	return FORMATS.some((format) => format === value);
+}
+
 function isDialect(value: string): value is ChatCoreSchemaDialect {
 	return DIALECTS.some((dialect) => dialect === value);
+}
+
+function isPrismaProvider(value: string): value is ChatCoreSchemaProvider {
+	return PRISMA_PROVIDERS.some((p) => p === value);
 }
 
 function isIdStrategy(value: string): value is ChatCoreSchemaIdStrategy {

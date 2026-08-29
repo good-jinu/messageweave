@@ -1,13 +1,33 @@
 import { Kysely, MysqlDialect, PostgresDialect, SqliteDialect } from "kysely";
+import type {
+	GenerateDrizzleSchemaOptions,
+	GeneratePrismaSchemaOptions,
+	MessageWeaveDrizzleDialect,
+	MessageWeavePrismaProvider,
+	MessageWeaveSchemaIdStrategy,
+} from "messageweave/schema";
+import {
+	generateDrizzleSchema,
+	generatePrismaSchema,
+} from "messageweave/schema";
 import { generate } from "unadapter/generate";
 import { kyselyAdapter } from "unadapter/kysely";
 import { getMessageWeaveTables } from "./schema";
 
-export type ChatCoreSchemaDialect = "mysql" | "postgres" | "sqlite";
+export type ChatCoreSchemaFormat = "drizzle" | "prisma" | "sql";
 
-export type ChatCoreSchemaIdStrategy = "number" | "serial" | "string" | "uuid";
+export type ChatCoreSchemaDialect =
+	| MessageWeaveDrizzleDialect
+	| "mysql"
+	| "postgres"
+	| "sqlite";
 
-export interface GenerateChatCoreSchemaOptions {
+export type ChatCoreSchemaProvider = MessageWeavePrismaProvider;
+
+export type ChatCoreSchemaIdStrategy = MessageWeaveSchemaIdStrategy;
+
+export interface GenerateChatCoreSqlSchemaOptions {
+	format?: "sql";
 	dialect: ChatCoreSchemaDialect;
 	/**
 	 * Primary-key strategy for the generated `id` columns.
@@ -17,6 +37,50 @@ export interface GenerateChatCoreSchemaOptions {
 	idStrategy?: ChatCoreSchemaIdStrategy;
 }
 
+export interface GenerateChatCoreDrizzleSchemaOptions {
+	format: "drizzle";
+	dialect: ChatCoreSchemaDialect;
+	/**
+	 * Primary-key strategy for the generated `id` columns.
+	 *
+	 * @default "string"
+	 */
+	idStrategy?: ChatCoreSchemaIdStrategy;
+}
+
+export interface GenerateChatCorePrismaSchemaOptions {
+	format: "prisma";
+	/**
+	 * Target database provider for Prisma.
+	 *
+	 * @default "postgresql"
+	 */
+	provider?: ChatCoreSchemaProvider;
+	/**
+	 * Alias for `provider`.
+	 */
+	dialect?: ChatCoreSchemaProvider;
+	/**
+	 * Whether to include `generator client` and `datasource db` blocks at the top.
+	 *
+	 * @default false
+	 */
+	includeDatasource?: boolean;
+	/**
+	 * Primary-key strategy for the generated `id` columns.
+	 *
+	 * @default "string"
+	 */
+	idStrategy?: ChatCoreSchemaIdStrategy;
+}
+
+export type GenerateChatCoreSchemaOptions =
+	| GenerateChatCoreSqlSchemaOptions
+	| GenerateChatCoreDrizzleSchemaOptions
+	| GenerateChatCorePrismaSchemaOptions;
+
+export type GenerateMessageWeaveSchemaOptions = GenerateChatCoreSchemaOptions;
+
 type EmptyDatabase = Record<string, never>;
 
 interface AdvancedDatabaseOptions {
@@ -24,10 +88,18 @@ interface AdvancedDatabaseOptions {
 	useNumberId?: true;
 }
 
-/** Generate SQL DDL for ChatCore's storage tables. */
+/** Generate schema definition (SQL, Drizzle, or Prisma) for ChatCore's storage tables. */
 export async function generateChatCoreSchema(
 	options: GenerateChatCoreSchemaOptions,
 ): Promise<string> {
+	if (options.format === "drizzle") {
+		return generateDrizzleSchema(options);
+	}
+
+	if (options.format === "prisma") {
+		return generatePrismaSchema(options);
+	}
+
 	const db = createDriverlessKysely(options.dialect);
 	const adapter = kyselyAdapter(db, { type: options.dialect });
 	const sql = await generate(
@@ -42,6 +114,15 @@ export async function generateChatCoreSchema(
 	);
 	return applyChatCoreForeignKeyCascades(sql, options.dialect);
 }
+
+export const generateMessageWeaveSchema = generateChatCoreSchema;
+
+export {
+	type GenerateDrizzleSchemaOptions,
+	type GeneratePrismaSchemaOptions,
+	generateDrizzleSchema,
+	generatePrismaSchema,
+};
 
 function createDriverlessKysely(
 	dialect: ChatCoreSchemaDialect,
