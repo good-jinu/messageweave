@@ -24,5 +24,8 @@ export function kyselyAdapter<Database>(
 	options?: KyselyAdapterOptions,
 ) {
 	const { idStrategy, ...adapterOptions } = options ?? {};
-	return createUnadapterStorage(unadapterKysely(db, adapterOptions), idStrategy);
+	return createUnadapterStorage(
+		unadapterKysely(db, adapterOptions),
+		idStrategy,
+	);
 }

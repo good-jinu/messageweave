@@ -24,7 +24,10 @@ export interface PrismaAdapterOptions {
 export function prismaAdapter(prisma: object, options?: PrismaAdapterOptions) {
 	const { idStrategy, provider, ...adapterOptions } = options ?? {};
 
-	const inferredProvider = provider ?? (prisma as any)?._engineConfig?.activeProvider ?? (prisma as any)?._activeProvider;
+	const inferredProvider =
+		provider ??
+		(prisma as any)?._engineConfig?.activeProvider ??
+		(prisma as any)?._activeProvider;
 	if (!inferredProvider) {
 		throw new Error(
 			"Could not infer Prisma provider from client. Please provide the `provider` option explicitly.",

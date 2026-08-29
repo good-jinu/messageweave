@@ -26,7 +26,10 @@ export function drizzleAdapter(
 ) {
 	const { idStrategy, ...adapterOptions } = options;
 	return createUnadapterStorage(
-		unadapterDrizzle(db as Parameters<typeof unadapterDrizzle>[0], adapterOptions),
+		unadapterDrizzle(
+			db as Parameters<typeof unadapterDrizzle>[0],
+			adapterOptions,
+		),
 		idStrategy,
 	);
 }
