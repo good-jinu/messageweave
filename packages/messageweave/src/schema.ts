@@ -135,6 +135,8 @@ export function getMessageWeaveTables(): MessageWeaveSchema {
 
 export {
 	type GenerateDrizzleSchemaOptions,
+	type GenerateMessageWeaveDrizzleSchemaOptions,
+	type GenerateMessageWeavePrismaSchemaOptions,
 	type GenerateMessageWeaveSchemaOptions,
 	type GeneratePrismaSchemaOptions,
 	generateDrizzleSchema,

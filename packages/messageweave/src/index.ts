@@ -1,6 +1,8 @@
 export { type ChatCore, createChatCore } from "./chatcore";
 export {
 	type GenerateDrizzleSchemaOptions,
+	type GenerateMessageWeaveDrizzleSchemaOptions,
+	type GenerateMessageWeavePrismaSchemaOptions,
 	type GenerateMessageWeaveSchemaOptions,
 	type GeneratePrismaSchemaOptions,
 	generateDrizzleSchema,

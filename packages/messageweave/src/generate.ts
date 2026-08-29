@@ -5,14 +5,20 @@ import type {
 import { generate } from "unadapter/generate";
 import { getMessageWeaveTables } from "./schema";
 
+/** Supported database dialects for Drizzle schema generation. */
 export type MessageWeaveDrizzleDialect = UnadapterDrizzleDialect;
+
+/** Supported database providers for Prisma schema generation. */
 export type MessageWeavePrismaProvider = UnadapterPrismaProvider;
+
+/** Supported primary-key strategies for generated database schemas. */
 export type MessageWeaveSchemaIdStrategy =
 	| "number"
 	| "serial"
 	| "string"
 	| "uuid";
 
+/** Options for generating Drizzle ORM schema definitions. */
 export interface GenerateDrizzleSchemaOptions {
 	/** Target database dialect for Drizzle ORM. */
 	dialect: MessageWeaveDrizzleDialect;
@@ -24,6 +30,7 @@ export interface GenerateDrizzleSchemaOptions {
 	idStrategy?: MessageWeaveSchemaIdStrategy;
 }
 
+/** Options for generating Prisma schema model definitions. */
 export interface GeneratePrismaSchemaOptions {
 	/**
 	 * Target database provider for Prisma.
@@ -49,9 +56,24 @@ export interface GeneratePrismaSchemaOptions {
 	idStrategy?: MessageWeaveSchemaIdStrategy;
 }
 
+/** Options for generating Drizzle schema via the unified generator. */
+export interface GenerateMessageWeaveDrizzleSchemaOptions
+	extends GenerateDrizzleSchemaOptions {
+	/** Format identifier specifying Drizzle ORM generation. */
+	format: "drizzle";
+}
+
+/** Options for generating Prisma schema via the unified generator. */
+export interface GenerateMessageWeavePrismaSchemaOptions
+	extends GeneratePrismaSchemaOptions {
+	/** Format identifier specifying Prisma schema generation. */
+	format: "prisma";
+}
+
+/** Unified schema generation options for MessageWeave tables. */
 export type GenerateMessageWeaveSchemaOptions =
-	| ({ format: "drizzle" } & GenerateDrizzleSchemaOptions)
-	| ({ format: "prisma" } & GeneratePrismaSchemaOptions);
+	| GenerateMessageWeaveDrizzleSchemaOptions
+	| GenerateMessageWeavePrismaSchemaOptions;
 
 /**
  * Generate Drizzle ORM TypeScript schema code for MessageWeave tables.
