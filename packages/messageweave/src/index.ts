@@ -23,4 +23,5 @@ export type {
 } from "./storage";
 export type * from "./types";
 export { generateId } from "./utils/id";
+export { projectTimeline } from "./utils/project";
 export { ChatCoreError } from "./utils/validate";

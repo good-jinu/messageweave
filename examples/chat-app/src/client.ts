@@ -48,6 +48,19 @@ type SsePayload =
 	| { type: "room.created"; room: SerializedRoom }
 	| { type: "sync"; events: SerializedEvent[]; nextToken: number };
 
+interface ProjectedClientMessage {
+	id: string;
+	roomId: string;
+	senderId: string;
+	displayName: string;
+	body: string;
+	timestamp: number;
+	sequenceId: number;
+	isEdited: boolean;
+	editedAt: number | null;
+	isDeleted: boolean;
+}
+
 const state = {
 	rooms: [] as SerializedRoom[],
 	activeRoomId: "",
@@ -56,6 +69,7 @@ const state = {
 	seenEventIds: new Set<string>(),
 	userId: localStorage.getItem("chatcore:userId") ?? crypto.randomUUID(),
 	displayName: localStorage.getItem("chatcore:displayName") ?? "",
+	editingMessageId: null as string | null,
 };
 
 localStorage.setItem("chatcore:userId", state.userId);
@@ -169,24 +183,212 @@ function renderMembers(): void {
 	);
 }
 
+function projectRoomMessages(
+	events: SerializedEvent[],
+): ProjectedClientMessage[] {
+	const chronological = [...events].sort((a, b) => a.sequenceId - b.sequenceId);
+	const messageMap = new Map<string, ProjectedClientMessage>();
+	const orderedIds: string[] = [];
+
+	for (const event of chronological) {
+		if (event.type === "message.edit") {
+			const targetId =
+				typeof event.content?.targetMessageId === "string"
+					? event.content.targetMessageId
+					: null;
+			if (targetId && messageMap.has(targetId)) {
+				const msg = messageMap.get(targetId)!;
+				msg.body = event.body;
+				msg.isEdited = true;
+				msg.editedAt =
+					typeof event.content?.editedAt === "number"
+						? event.content.editedAt
+						: event.timestamp;
+			}
+			continue;
+		}
+
+		if (event.type === "message.delete") {
+			const targetId =
+				typeof event.content?.targetMessageId === "string"
+					? event.content.targetMessageId
+					: null;
+			if (targetId && messageMap.has(targetId)) {
+				const msg = messageMap.get(targetId)!;
+				msg.isDeleted = true;
+				msg.body = "";
+			}
+			continue;
+		}
+
+		if (event.type === "message.text") {
+			const msg: ProjectedClientMessage = {
+				id: event.id,
+				roomId: event.roomId,
+				senderId: event.senderId,
+				displayName: event.displayName,
+				body: event.body,
+				timestamp: event.timestamp,
+				sequenceId: event.sequenceId,
+				isEdited: false,
+				editedAt: null,
+				isDeleted: false,
+			};
+			messageMap.set(event.id, msg);
+			orderedIds.push(event.id);
+		}
+	}
+
+	return orderedIds.map((id) => messageMap.get(id)!).filter(Boolean);
+}
+
+async function saveEditedMessage(
+	messageId: string,
+	body: string,
+): Promise<void> {
+	if (state.activeRoomId.length === 0) return;
+	try {
+		await api(
+			`/api/rooms/${encodeURIComponent(state.activeRoomId)}/messages/${encodeURIComponent(messageId)}`,
+			{
+				method: "PATCH",
+				body: JSON.stringify({
+					body,
+					senderId: state.userId,
+					displayName: currentDisplayName(),
+				}),
+			},
+		);
+		state.editingMessageId = null;
+		renderMessages();
+	} catch (error) {
+		console.error("Failed to edit message:", error);
+	}
+}
+
+async function deleteMessage(messageId: string): Promise<void> {
+	if (state.activeRoomId.length === 0) return;
+	try {
+		await api(
+			`/api/rooms/${encodeURIComponent(state.activeRoomId)}/messages/${encodeURIComponent(messageId)}`,
+			{
+				method: "DELETE",
+				body: JSON.stringify({
+					senderId: state.userId,
+				}),
+			},
+		);
+	} catch (error) {
+		console.error("Failed to delete message:", error);
+	}
+}
+
 function renderMessages(): void {
 	const events = state.eventsByRoom.get(state.activeRoomId) ?? [];
-	const messageEvents = events.filter((event) => event.type === "message.text");
+	const messages = projectRoomMessages(events);
 
 	elements.messages.replaceChildren(
-		...messageEvents.map((event) => {
+		...messages.map((message) => {
 			const article = document.createElement("article");
 			article.className = "message";
-			article.dataset.mine = String(event.senderId === state.userId);
+			article.dataset.mine = String(message.senderId === state.userId);
+
+			const header = document.createElement("div");
+			header.className = "message-header";
 
 			const meta = document.createElement("div");
 			meta.className = "message-meta";
-			meta.textContent = `${event.displayName} - ${formatTime(event.timestamp)} - #${event.sequenceId}`;
+			meta.textContent = `${message.displayName} - ${formatTime(message.timestamp)} - #${message.sequenceId}`;
 
-			const body = document.createElement("p");
-			body.textContent = event.body;
+			if (message.isEdited && !message.isDeleted) {
+				const editedSpan = document.createElement("span");
+				editedSpan.className = "edited-badge";
+				editedSpan.textContent = "(edited)";
+				meta.append(editedSpan);
+			}
 
-			article.append(meta, body);
+			header.append(meta);
+
+			if (
+				message.senderId === state.userId &&
+				!message.isDeleted &&
+				state.editingMessageId !== message.id
+			) {
+				const actions = document.createElement("div");
+				actions.className = "message-actions";
+
+				const editBtn = document.createElement("button");
+				editBtn.type = "button";
+				editBtn.className = "action-btn";
+				editBtn.textContent = "Edit";
+				editBtn.addEventListener("click", () => {
+					state.editingMessageId = message.id;
+					renderMessages();
+				});
+
+				const deleteBtn = document.createElement("button");
+				deleteBtn.type = "button";
+				deleteBtn.className = "action-btn delete-btn";
+				deleteBtn.textContent = "Delete";
+				deleteBtn.addEventListener("click", () => {
+					void deleteMessage(message.id);
+				});
+
+				actions.append(editBtn, deleteBtn);
+				header.append(actions);
+			}
+
+			article.append(header);
+
+			if (message.isDeleted) {
+				const deletedText = document.createElement("p");
+				deletedText.className = "message-tombstone";
+				deletedText.textContent = "This message was deleted";
+				article.append(deletedText);
+			} else if (state.editingMessageId === message.id) {
+				const editForm = document.createElement("form");
+				editForm.className = "edit-form";
+
+				const editInput = document.createElement("input");
+				editInput.type = "text";
+				editInput.value = message.body;
+				editInput.required = true;
+
+				const actionsDiv = document.createElement("div");
+				actionsDiv.className = "edit-form-actions";
+
+				const cancelBtn = document.createElement("button");
+				cancelBtn.type = "button";
+				cancelBtn.className = "edit-cancel-btn";
+				cancelBtn.textContent = "Cancel";
+				cancelBtn.addEventListener("click", () => {
+					state.editingMessageId = null;
+					renderMessages();
+				});
+
+				const saveBtn = document.createElement("button");
+				saveBtn.type = "submit";
+				saveBtn.className = "edit-save-btn";
+				saveBtn.textContent = "Save";
+
+				actionsDiv.append(cancelBtn, saveBtn);
+				editForm.append(editInput, actionsDiv);
+
+				editForm.addEventListener("submit", (e) => {
+					e.preventDefault();
+					const newBody = editInput.value.trim();
+					if (newBody.length === 0) return;
+					void saveEditedMessage(message.id, newBody);
+				});
+
+				article.append(editForm);
+				setTimeout(() => editInput.focus(), 0);
+			} else {
+				const body = document.createElement("p");
+				body.textContent = message.body;
+				article.append(body);
+			}
+
 			return article;
 		}),
 	);

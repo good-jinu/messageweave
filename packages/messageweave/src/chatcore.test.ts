@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { projectTimeline } from "./index";
 import type { TestInstance } from "./test-utils";
 import { getTestInstance } from "./test-utils";
 import type { AttachmentReference } from "./types";
@@ -227,6 +228,212 @@ describe("sendMessage", () => {
 				body: "   ",
 			}),
 		).rejects.toBeInstanceOf(ChatCoreError);
+	});
+});
+
+describe("editMessage", () => {
+	it("publishes an edit revision linking to the target message", async () => {
+		const room = await t.flow.createRoom({ creatorId: "u1" });
+		const original = await t.flow.sendMessage({
+			roomId: room.id,
+			senderId: "u1",
+			body: "original text",
+		});
+
+		const editResult = await t.flow.editMessage({
+			roomId: room.id,
+			senderId: "u1",
+			messageId: original.event.id,
+			body: "edited text",
+		});
+
+		expect(editResult.event.type).toBe("message.edit");
+		expect(editResult.event.content.body).toBe("edited text");
+		expect(typeof editResult.event.content.editedAt).toBe("number");
+		expect(editResult.sequenceId).toBeGreaterThan(original.sequenceId);
+
+		// Event edge created linking to target message
+		expect(t.db.eventEdge).toContainEqual({
+			id: expect.any(String),
+			eventId: editResult.event.id,
+			parentEventId: original.event.id,
+		});
+	});
+
+	it("rejects whitespace-only edit body", async () => {
+		const room = await t.flow.createRoom({ creatorId: "u1" });
+		const original = await t.flow.sendMessage({
+			roomId: room.id,
+			senderId: "u1",
+			body: "original text",
+		});
+
+		await expect(
+			t.flow.editMessage({
+				roomId: room.id,
+				senderId: "u1",
+				messageId: original.event.id,
+				body: "   ",
+			}),
+		).rejects.toBeInstanceOf(ChatCoreError);
+	});
+
+	it("rejects editing a non-existent message ID", async () => {
+		const room = await t.flow.createRoom({ creatorId: "u1" });
+		await expect(
+			t.flow.editMessage({
+				roomId: room.id,
+				senderId: "u1",
+				messageId: "nonexistent-id",
+				body: "new body",
+			}),
+		).rejects.toBeInstanceOf(ChatCoreError);
+	});
+
+	it("rejects editing a message from a different room", async () => {
+		const room1 = await t.flow.createRoom({ creatorId: "u1" });
+		const room2 = await t.flow.createRoom({ creatorId: "u1" });
+		const original = await t.flow.sendMessage({
+			roomId: room1.id,
+			senderId: "u1",
+			body: "room1 message",
+		});
+
+		await expect(
+			t.flow.editMessage({
+				roomId: room2.id,
+				senderId: "u1",
+				messageId: original.event.id,
+				body: "new body in room2",
+			}),
+		).rejects.toBeInstanceOf(ChatCoreError);
+	});
+});
+
+describe("deleteMessage", () => {
+	it("publishes a tombstone delete event linking to the target message", async () => {
+		const room = await t.flow.createRoom({ creatorId: "u1" });
+		const original = await t.flow.sendMessage({
+			roomId: room.id,
+			senderId: "u1",
+			body: "message to be deleted",
+		});
+
+		const deleteResult = await t.flow.deleteMessage({
+			roomId: room.id,
+			senderId: "u1",
+			messageId: original.event.id,
+			reason: "user requested",
+		});
+
+		expect(deleteResult.event.type).toBe("message.delete");
+		expect(deleteResult.event.content.tombstone).toBe(true);
+		expect(deleteResult.event.content.reason).toBe("user requested");
+		expect(typeof deleteResult.event.content.deletedAt).toBe("number");
+		expect(deleteResult.sequenceId).toBeGreaterThan(original.sequenceId);
+
+		expect(t.db.eventEdge).toContainEqual({
+			id: expect.any(String),
+			eventId: deleteResult.event.id,
+			parentEventId: original.event.id,
+		});
+	});
+
+	it("rejects deleting a non-existent message ID", async () => {
+		const room = await t.flow.createRoom({ creatorId: "u1" });
+		await expect(
+			t.flow.deleteMessage({
+				roomId: room.id,
+				senderId: "u1",
+				messageId: "nonexistent-id",
+			}),
+		).rejects.toBeInstanceOf(ChatCoreError);
+	});
+});
+
+describe("projectTimeline", () => {
+	it("projects single and multiple revisions cleanly into projected messages", async () => {
+		const room = await t.flow.createRoom({ creatorId: "u1" });
+		const msg1 = await t.flow.sendMessage({
+			roomId: room.id,
+			senderId: "u1",
+			body: "first message",
+		});
+		const msg2 = await t.flow.sendMessage({
+			roomId: room.id,
+			senderId: "u2",
+			body: "second message",
+		});
+
+		// Edit msg1
+		await t.flow.editMessage({
+			roomId: room.id,
+			senderId: "u1",
+			messageId: msg1.event.id,
+			body: "first message (edit 1)",
+		});
+
+		// Edit msg1 again
+		await t.flow.editMessage({
+			roomId: room.id,
+			senderId: "u1",
+			messageId: msg1.event.id,
+			body: "first message (edit 2)",
+		});
+
+		const rawEvents = await t.flow.getRoomTimeline(room.id, { limit: 100 });
+		const projected = projectTimeline(rawEvents);
+
+		expect(projected).toHaveLength(2);
+		expect(projected[0]!.id).toBe(msg1.event.id);
+		expect(projected[0]!.body).toBe("first message (edit 2)");
+		expect(projected[0]!.isEdited).toBe(true);
+		expect(projected[0]!.editCount).toBe(2);
+		expect(projected[0]!.rawEvents).toHaveLength(3); // original + 2 edits
+
+		expect(projected[1]!.id).toBe(msg2.event.id);
+		expect(projected[1]!.body).toBe("second message");
+		expect(projected[1]!.isEdited).toBe(false);
+		expect(projected[1]!.editCount).toBe(0);
+	});
+
+	it("handles message deletion and includeDeleted option", async () => {
+		const room = await t.flow.createRoom({ creatorId: "u1" });
+		const msg1 = await t.flow.sendMessage({
+			roomId: room.id,
+			senderId: "u1",
+			body: "msg1",
+		});
+		const msg2 = await t.flow.sendMessage({
+			roomId: room.id,
+			senderId: "u2",
+			body: "msg2",
+		});
+
+		await t.flow.deleteMessage({
+			roomId: room.id,
+			senderId: "u1",
+			messageId: msg1.event.id,
+			reason: "retracted",
+		});
+
+		const rawEvents = await t.flow.getRoomTimeline(room.id, { limit: 100 });
+
+		// Default includeDeleted: true
+		const withTombstones = projectTimeline(rawEvents);
+		expect(withTombstones).toHaveLength(2);
+		expect(withTombstones[0]!.id).toBe(msg1.event.id);
+		expect(withTombstones[0]!.isDeleted).toBe(true);
+		expect(withTombstones[0]!.body).toBe("");
+		expect(withTombstones[0]!.deleteReason).toBe("retracted");
+		expect(typeof withTombstones[0]!.deletedAt).toBe("number");
+
+		// Filter out deleted: includeDeleted: false
+		const withoutDeleted = projectTimeline(rawEvents, {
+			includeDeleted: false,
+		});
+		expect(withoutDeleted).toHaveLength(1);
+		expect(withoutDeleted[0]!.id).toBe(msg2.event.id);
 	});
 });
 
