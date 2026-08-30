@@ -12,6 +12,7 @@ jobs:
   version:
     timeout-minutes: 15
     runs-on: ubuntu-latest
+    environment: npm
     permissions:
       contents: write
       pull-requests: write
