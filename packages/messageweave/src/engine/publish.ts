@@ -48,11 +48,18 @@ export function createPublishMethod(
 
 		// Each parent must exist and belong to the same room.
 		if (data.parentEventIds?.length) {
+			const parentRows = await adapter.findMany({
+				model: "event",
+				where: [{ field: "id", value: data.parentEventIds, operator: "in" }],
+			});
+
+			const parentMap = new Map<string, (typeof parentRows)[number]>();
+			for (const row of parentRows) {
+				parentMap.set(String(row.id), row);
+			}
+
 			for (const parentId of data.parentEventIds) {
-				const parentRow = await adapter.findOne({
-					model: "event",
-					where: [{ field: "id", value: parentId }],
-				});
+				const parentRow = parentMap.get(String(parentId));
 				if (!parentRow) {
 					throw new ChatCoreError(`parent event not found: ${parentId}`);
 				}
