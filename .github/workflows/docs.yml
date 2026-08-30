@@ -8,13 +8,7 @@ on:
       - 'v*'
   workflow_dispatch:
 
-# Allow the GITHUB_TOKEN to deploy to GitHub Pages.
 permissions: {}
-
-# Allow one concurrent deployment; let in-progress runs finish.
-concurrency:
-  group: pages
-  cancel-in-progress: false
 
 jobs:
   build:
@@ -46,22 +40,3 @@ jobs:
       - name: Validate and build docs site
         run: pnpm run check
         working-directory: website
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: website/build
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-24.04
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
