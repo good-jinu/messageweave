@@ -794,6 +794,32 @@ describe("publishEvent — integrity (§3.2)", () => {
 		expect(t.db.sequence).toHaveLength(0);
 	});
 
+	it("validates multiple parentEventIds in a single batch query", async () => {
+		const room = await t.flow.createRoom({ creatorId: "u1" });
+		const p1 = await t.flow.publishEvent({
+			roomId: room.id,
+			senderId: "u1",
+			type: "msg",
+			content: { p: 1 },
+		});
+		const p2 = await t.flow.publishEvent({
+			roomId: room.id,
+			senderId: "u1",
+			type: "msg",
+			content: { p: 2 },
+		});
+
+		const reply = await t.flow.publishEvent({
+			roomId: room.id,
+			senderId: "u2",
+			type: "msg",
+			content: { reply: true },
+			parentEventIds: [p1.event.id, p2.event.id],
+		});
+
+		expect(reply.event.id).toBeTruthy();
+	});
+
 	it("rejects a cross-room parentEventId", async () => {
 		const a = await t.flow.createRoom({ creatorId: "u1" });
 		const b = await t.flow.createRoom({ creatorId: "u1" });

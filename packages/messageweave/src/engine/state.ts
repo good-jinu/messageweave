@@ -57,17 +57,17 @@ export function createStateMethods(adapter: FlowAdapter) {
 			where: [{ field: "roomId", value: roomId }],
 		});
 
-		const events: FlowEvent[] = [];
-		for (const state of stateRows) {
-			const event = await adapter.findOne({
-				model: "event",
-				where: [{ field: "id", value: String(state.eventId) }],
-			});
-			if (event) {
-				events.push(toEvent(event));
-			}
+		if (stateRows.length === 0) {
+			return [];
 		}
-		return events;
+
+		const eventIds = stateRows.map((state) => String(state.eventId));
+		const eventRows = await adapter.findMany({
+			model: "event",
+			where: [{ field: "id", value: eventIds, operator: "in" }],
+		});
+
+		return eventRows.map(toEvent);
 	}
 
 	return { getRoomState };
