@@ -908,3 +908,215 @@ describe("attachment references", () => {
 		expect(event.content.attachments).toEqual([attachment]);
 	});
 });
+
+describe("createRoom — input validation", () => {
+	it("rejects an empty creatorId", async () => {
+		await expect(t.flow.createRoom({ creatorId: "" })).rejects.toBeInstanceOf(
+			ChatCoreError,
+		);
+	});
+});
+
+describe("sendMessage — input validation", () => {
+	it("rejects a missing roomId", async () => {
+		await expect(
+			// @ts-expect-error testing invalid input
+			t.flow.sendMessage({ senderId: "u1", body: "hi" }),
+		).rejects.toBeInstanceOf(ChatCoreError);
+	});
+
+	it("rejects a missing senderId", async () => {
+		const room = await t.flow.createRoom({ creatorId: "u1" });
+		await expect(
+			// @ts-expect-error testing invalid input
+			t.flow.sendMessage({ roomId: room.id, body: "hi" }),
+		).rejects.toBeInstanceOf(ChatCoreError);
+	});
+
+	it("rejects a missing body field", async () => {
+		const room = await t.flow.createRoom({ creatorId: "u1" });
+		await expect(
+			// @ts-expect-error testing invalid input
+			t.flow.sendMessage({ roomId: room.id, senderId: "u1" }),
+		).rejects.toBeInstanceOf(ChatCoreError);
+	});
+});
+
+describe("editMessage — input validation", () => {
+	it("rejects a missing roomId", async () => {
+		await expect(
+			// @ts-expect-error testing invalid input
+			t.flow.editMessage({ senderId: "u1", messageId: "e1", body: "x" }),
+		).rejects.toBeInstanceOf(ChatCoreError);
+	});
+
+	it("rejects a missing senderId", async () => {
+		await expect(
+			// @ts-expect-error testing invalid input
+			t.flow.editMessage({ roomId: "r1", messageId: "e1", body: "x" }),
+		).rejects.toBeInstanceOf(ChatCoreError);
+	});
+
+	it("rejects a missing messageId", async () => {
+		await expect(
+			// @ts-expect-error testing invalid input
+			t.flow.editMessage({ roomId: "r1", senderId: "u1", body: "x" }),
+		).rejects.toBeInstanceOf(ChatCoreError);
+	});
+
+	it("rejects an empty messageId", async () => {
+		await expect(
+			t.flow.editMessage({
+				roomId: "r1",
+				senderId: "u1",
+				messageId: "",
+				body: "x",
+			}),
+		).rejects.toBeInstanceOf(ChatCoreError);
+	});
+});
+
+describe("deleteMessage — input validation", () => {
+	it("rejects a missing roomId", async () => {
+		await expect(
+			// @ts-expect-error testing invalid input
+			t.flow.deleteMessage({ senderId: "u1", messageId: "e1" }),
+		).rejects.toBeInstanceOf(ChatCoreError);
+	});
+
+	it("rejects a missing senderId", async () => {
+		await expect(
+			// @ts-expect-error testing invalid input
+			t.flow.deleteMessage({ roomId: "r1", messageId: "e1" }),
+		).rejects.toBeInstanceOf(ChatCoreError);
+	});
+
+	it("rejects a missing messageId", async () => {
+		await expect(
+			// @ts-expect-error testing invalid input
+			t.flow.deleteMessage({ roomId: "r1", senderId: "u1" }),
+		).rejects.toBeInstanceOf(ChatCoreError);
+	});
+
+	it("rejects an empty messageId", async () => {
+		await expect(
+			t.flow.deleteMessage({ roomId: "r1", senderId: "u1", messageId: "" }),
+		).rejects.toBeInstanceOf(ChatCoreError);
+	});
+
+	it("publishes a tombstone without a reason when reason is omitted", async () => {
+		const room = await t.flow.createRoom({ creatorId: "u1" });
+		const msg = await t.flow.sendMessage({
+			roomId: room.id,
+			senderId: "u1",
+			body: "bye",
+		});
+
+		const result = await t.flow.deleteMessage({
+			roomId: room.id,
+			senderId: "u1",
+			messageId: msg.event.id,
+		});
+
+		expect(result.event.type).toBe("message.delete");
+		expect(result.event.content.tombstone).toBe(true);
+		expect(result.event.content.reason).toBeUndefined();
+	});
+});
+
+describe("publishEvent — additional input validation", () => {
+	it("rejects a missing senderId", async () => {
+		const room = await t.flow.createRoom({ creatorId: "u1" });
+		await expect(
+			// @ts-expect-error testing invalid input
+			t.flow.publishEvent({ roomId: room.id, type: "msg" }),
+		).rejects.toBeInstanceOf(ChatCoreError);
+	});
+
+	it("rejects a missing type", async () => {
+		const room = await t.flow.createRoom({ creatorId: "u1" });
+		await expect(
+			// @ts-expect-error testing invalid input
+			t.flow.publishEvent({ roomId: room.id, senderId: "u1" }),
+		).rejects.toBeInstanceOf(ChatCoreError);
+	});
+
+	it("rejects an empty type string", async () => {
+		const room = await t.flow.createRoom({ creatorId: "u1" });
+		await expect(
+			t.flow.publishEvent({ roomId: room.id, senderId: "u1", type: "" }),
+		).rejects.toBeInstanceOf(ChatCoreError);
+	});
+});
+
+describe("getRoomTimeline — default limit", () => {
+	it("returns up to defaultLimit events when no options are passed", async () => {
+		const room = await t.flow.createRoom({ creatorId: "u1" });
+		for (let i = 0; i < 3; i++) {
+			await t.flow.publishEvent({
+				roomId: room.id,
+				senderId: "u1",
+				type: "msg",
+				content: { i },
+			});
+		}
+
+		const events = await t.flow.getRoomTimeline(room.id);
+		expect(events).toHaveLength(3);
+		// newest-first
+		expect(events[0]!.sequenceId).toBeGreaterThan(events[1]!.sequenceId);
+	});
+
+	it("respects a custom defaultLimit set on the instance", async () => {
+		const { flow } = getTestInstance({ defaultLimit: 2 });
+		const room = await flow.createRoom({ creatorId: "u1" });
+		for (let i = 0; i < 5; i++) {
+			await flow.publishEvent({
+				roomId: room.id,
+				senderId: "u1",
+				type: "msg",
+				content: { i },
+			});
+		}
+
+		const events = await flow.getRoomTimeline(room.id);
+		expect(events).toHaveLength(2);
+	});
+});
+
+describe("getSyncStream — omitted options", () => {
+	it("defaults sinceSequenceId to 0 when called with no arguments, returning all events", async () => {
+		const room = await t.flow.createRoom({ creatorId: "u1" });
+		await t.flow.publishEvent({
+			roomId: room.id,
+			senderId: "u1",
+			type: "msg",
+			content: {},
+		});
+		await t.flow.publishEvent({
+			roomId: room.id,
+			senderId: "u1",
+			type: "msg",
+			content: {},
+		});
+
+		const result = await t.flow.getSyncStream();
+		expect(result.events).toHaveLength(2);
+		expect(result.nextToken).toBe(2);
+	});
+});
+
+describe("flow.options", () => {
+	it("exposes the resolved options on the returned instance", () => {
+		const { flow } = getTestInstance({
+			defaultLimit: 42,
+			maxContentBytes: 512,
+		});
+		expect(flow.options.defaultLimit).toBe(42);
+		expect(flow.options.maxContentBytes).toBe(512);
+	});
+
+	it("exposes the storage backend on options", () => {
+		expect(t.flow.options.storage).toBeDefined();
+	});
+});
