@@ -324,3 +324,78 @@ export interface MessageWeaveHooks {
 
 /** Backwards-compatible alias for {@link MessageWeaveHooks}. */
 export type ChatCoreHooks = MessageWeaveHooks;
+
+/**
+ * Pluggable pub/sub adapter interface for real-time multi-node event distribution.
+ * Enables scaling MessageWeave across multiple server instances (e.g. via Redis,
+ * PostgreSQL LISTEN/NOTIFY, NATS, etc.) without coupling to any specific transport.
+ */
+export interface PubSubAdapter {
+	/**
+	 * Publish an event payload to a topic/channel.
+	 *
+	 * @param channel The topic name (e.g. `events` or `room:<roomId>`)
+	 * @param event The published FlowEvent
+	 */
+	publish(channel: string, event: FlowEvent): Promise<void> | void;
+
+	/**
+	 * Subscribe to event notifications on a topic/channel.
+	 * Returns an unsubscribe callback or a promise resolving to an unsubscribe callback.
+	 *
+	 * @param channel The topic name to listen on
+	 * @param onEvent Callback invoked when an event is received on the topic
+	 */
+	subscribe(
+		channel: string,
+		onEvent: (event: FlowEvent) => void | Promise<void>,
+	): Promise<() => void | Promise<void>> | (() => void | Promise<void>);
+}
+
+/** Options for subscribing to real-time events via {@link MessageWeave.subscribe}. */
+export interface SubscribeOptions {
+	/**
+	 * Optional room filter. When specified, only events belonging to this room
+	 * will be yielded by the subscription.
+	 */
+	roomId?: string;
+
+	/**
+	 * Sequence ID cursor to catch up or replay from.
+	 *
+	 * When provided, all stored events with `sequenceId > sinceSequenceId` are streamed
+	 * first, followed seamlessly by incoming real-time events without gaps or duplicates.
+	 */
+	sinceSequenceId?: number;
+
+	/**
+	 * Optional event type filter list (e.g. `["message.text", "room.state.*"]`).
+	 * Supports exact type strings or wildcard prefixes ending with `*`.
+	 */
+	types?: string[];
+
+	/**
+	 * Optional `AbortSignal` to cancel and terminate the subscription.
+	 */
+	signal?: AbortSignal;
+
+	/**
+	 * Maximum number of queued unconsumed events before dropping or handling backpressure.
+	 *
+	 * @default 1000
+	 */
+	bufferSize?: number;
+}
+
+/**
+ * Asynchronous iterable stream of {@link FlowEvent} items returned by {@link MessageWeave.subscribe}.
+ *
+ * Supports standard `for await...of` loops, early termination via `break` or `return()`,
+ * and cancellation via `AbortSignal`.
+ */
+export interface EventStream extends AsyncIterable<FlowEvent> {
+	/**
+	 * Explicitly close and terminate the subscription stream, releasing pub/sub listeners and resources.
+	 */
+	return(): Promise<IteratorResult<FlowEvent>>;
+}

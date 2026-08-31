@@ -21,6 +21,8 @@ export type {
 	MessageWeaveOptions,
 	MessageWeaveOptions as ChatCoreOptions,
 } from "./options";
+export { createMemoryPubSub } from "./realtime/pubsub";
+
 export type {
 	ChatCoreStorage,
 	ChatCoreStorageOperator,

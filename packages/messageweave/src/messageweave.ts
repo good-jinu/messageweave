@@ -7,11 +7,14 @@ import { createStateMethods } from "./engine/state";
 import { createSyncMethods } from "./engine/sync";
 import { createTimelineMethods } from "./engine/timeline";
 import type { MessageWeaveOptions } from "./options";
+import { createMemoryPubSub } from "./realtime/pubsub";
+import { createSubscribeMethod } from "./realtime/subscribe";
 import type {
 	CreateRoomInput,
 	DeleteMessageInput,
 	EditMessageInput,
 	EventListener,
+	EventStream,
 	FlowEvent,
 	GetSyncStreamOptions,
 	GetTimelineOptions,
@@ -21,6 +24,7 @@ import type {
 	PublishEventResult,
 	Room,
 	SendMessageInput,
+	SubscribeOptions,
 	SyncStreamResult,
 } from "./types";
 
@@ -51,6 +55,25 @@ export interface MessageWeave {
 	): Promise<FlowEvent[]>;
 	/** Read globally ordered events after a synchronization cursor. */
 	getSyncStream(options?: GetSyncStreamOptions): Promise<SyncStreamResult>;
+	/**
+	 * Subscribe to real-time events as an asynchronous iterable stream.
+	 *
+	 * When `sinceSequenceId` is provided, missed historical events are fetched and streamed
+	 * first before seamlessly transitioning to live events without gaps or duplicates.
+	 *
+	 * Compatible with `for await`, SSE (Server-Sent Events), WebSockets, and Edge workers.
+	 *
+	 * @example
+	 * ```ts
+	 * // Stream room events with catch-up and abort support
+	 * const controller = new AbortController();
+	 * for await (const event of flow.subscribe({ roomId: "general", sinceSequenceId: 100, signal: controller.signal })) {
+	 *   sendToClient(event);
+	 * }
+	 * ```
+	 */
+	subscribe(options?: SubscribeOptions): EventStream;
+
 	/**
 	 * Subscribe to all newly published events in-process.
 	 * Returns an unsubscribe callback function.
@@ -90,6 +113,7 @@ export function createMessageWeave(options: MessageWeaveOptions): MessageWeave {
 	const adapter = createFlowAdapter(options);
 	const sequencer = createSequencer(adapter);
 	const defaultLimit = options.defaultLimit ?? 100;
+	const pubsub = options.pubsub ?? createMemoryPubSub();
 	const listeners = new Set<EventListener>();
 
 	const emitEvent = async (event: FlowEvent, context: PublishContext) => {
@@ -106,6 +130,7 @@ export function createMessageWeave(options: MessageWeaveOptions): MessageWeave {
 	const { publishEvent } = createPublishMethod(adapter, sequencer, {
 		maxContentBytes: options.maxContentBytes,
 		hooks: options.hooks,
+		pubsub,
 		emitEvent,
 	});
 	const { sendMessage, editMessage, deleteMessage } =
@@ -113,6 +138,7 @@ export function createMessageWeave(options: MessageWeaveOptions): MessageWeave {
 	const { getRoomState } = createStateMethods(adapter);
 	const { getRoomTimeline } = createTimelineMethods(adapter, defaultLimit);
 	const { getSyncStream } = createSyncMethods(adapter, defaultLimit);
+	const subscribe = createSubscribeMethod(pubsub, getSyncStream);
 
 	function onEvent(listener: EventListener): () => void {
 		listeners.add(listener);
@@ -133,6 +159,7 @@ export function createMessageWeave(options: MessageWeaveOptions): MessageWeave {
 		getRoomState,
 		getRoomTimeline,
 		getSyncStream,
+		subscribe,
 		onEvent,
 	};
 }

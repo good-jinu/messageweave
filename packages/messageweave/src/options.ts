@@ -1,5 +1,5 @@
 import type { MessageWeaveStorage } from "./storage";
-import type { MessageWeaveHooks } from "./types";
+import type { MessageWeaveHooks, PubSubAdapter } from "./types";
 
 /**
  * Configuration for {@link createMessageWeave}.
@@ -30,6 +30,11 @@ export interface MessageWeaveOptions {
 	 * Lifecycle hooks for intercepting and reacting to engine actions.
 	 */
 	hooks?: MessageWeaveHooks;
+	/**
+	 * Pub/Sub adapter for real-time multi-node event distribution.
+	 * When omitted, an in-memory PubSub is used automatically.
+	 */
+	pubsub?: PubSubAdapter;
 }
 
 /** Backwards-compatible alias for {@link MessageWeaveOptions}. */
