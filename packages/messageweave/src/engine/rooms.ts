@@ -1,11 +1,20 @@
 import type { FlowAdapter } from "../db/adapter";
 import { toRoom } from "../db/rows";
-import type { CreateRoomInput, ListRoomsOptions, Room } from "../types";
+import type {
+	CreateRoomInput,
+	ListRoomsOptions,
+	MessageWeaveHooks,
+	Room,
+} from "../types";
 import { nowEpochMilliseconds } from "../utils/time";
 import { parseCreateRoomInput } from "../utils/validate";
 
 /** Room lifecycle methods. */
-export function createRoomMethods(adapter: FlowAdapter, defaultLimit: number) {
+export function createRoomMethods(
+	adapter: FlowAdapter,
+	defaultLimit: number,
+	hooks?: MessageWeaveHooks,
+) {
 	/** Create a new, isolated conversation boundary. */
 	async function createRoom(input: CreateRoomInput): Promise<Room> {
 		const data = parseCreateRoomInput(input);
@@ -17,7 +26,11 @@ export function createRoomMethods(adapter: FlowAdapter, defaultLimit: number) {
 				metadata: data.metadata ?? {},
 			},
 		});
-		return toRoom(row);
+		const room = toRoom(row);
+		if (hooks?.onRoomCreated) {
+			await hooks.onRoomCreated(room, input);
+		}
+		return room;
 	}
 
 	/** Fetch a room by id, or `null` if it does not exist. */

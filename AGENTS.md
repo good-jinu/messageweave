@@ -1,6 +1,6 @@
-# ChatCore Development Guide
+# MessageWeave Development Guide
 
-This is the ChatCore repository — an in-process, database-agnostic,
+This is the MessageWeave repository — an in-process, database-agnostic,
 event-sourced messaging engine for TypeScript. It provides the core logical
 engine for chat applications, leaving the transport layer (HTTP, WebSockets,
 gRPC) and the storage engine to the integrating developer.
@@ -18,14 +18,14 @@ gRPC) and the storage engine to the integrating developer.
 
 ## Database layer
 
-- The engine depends only on the public `ChatCoreStorage` contract. Applications
+- The engine depends only on the public `MessageWeaveStorage` contract. Applications
   may provide a custom implementation or use the `messageweave/drizzle`,
   `messageweave/prisma`, `messageweave/kysely`, `messageweave/knex`,
   `messageweave/mongodb`, and `messageweave/sumak` entry points.
 - Built-in database entry points use
   [`unadapter`](https://www.npmjs.com/package/unadapter) internally. Do not expose
   Unadapter configuration or require application code to import it.
-- `ChatCoreStorage` exposes no transaction primitive, so `publishEvent` is
+- `MessageWeaveStorage` exposes no transaction primitive, so `publishEvent` is
   serialized in-process to keep `sequenceId` strictly increasing (see
   `src/db/sequence.ts`).
 
@@ -49,9 +49,10 @@ gRPC) and the storage engine to the integrating developer.
 
 ## Testing
 
-- Tests use Vitest. Use `getTestInstance()` from `chatcore/test`; it
+- Tests use Vitest. Use `getTestInstance()` from `messageweave/test`; it
   returns `{ flow, db }` backed by the in-memory adapter.
 - Regression tests: add `@see` comment with the issue URL above `it()`/`describe()`.
+
 
 ## Documentation
 

@@ -6,7 +6,7 @@ applications — the transport layer (HTTP, WebSockets, gRPC) and the storage
 engine are left entirely in your hands.
 
 - **Database agnostic** — all persistence is delegated to a small
-  `ChatCoreStorage` backend you supply.
+  `MessageWeaveStorage` backend you supply.
 - **Immutable event sourcing** — every action in a room (a message, an edit, a
   membership or topic change) is an immutable `FlowEvent`.
 - **Trivial real-time sync** — a single, monotonically increasing `sequenceId`
@@ -65,10 +65,10 @@ const { events, nextToken } = await flow.getSyncStream({ sinceSequenceId: 0 });
 For production, use one of MessageWeave's optional database entry points:
 
 ```ts
-import { createChatCore } from "messageweave";
+import { createMessageWeave } from "messageweave";
 import { drizzleStorage } from "messageweave/drizzle";
 
-const flow = createChatCore({
+const flow = createMessageWeave({
   storage: drizzleStorage(db, {
     provider: "pg",
     schema,
@@ -77,19 +77,20 @@ const flow = createChatCore({
 ```
 
 Equivalent entry points are available for Prisma, Kysely, Knex, MongoDB, and
-Sumak. Applications can also provide a custom `ChatCoreStorage` implementation.
+Sumak. Applications can also provide a custom `MessageWeaveStorage` implementation.
 Unadapter powers the built-in integrations internally but is not part of
 application code.
 
-Generate starter SQL for ChatCore's storage tables with the separate CLI
+Generate starter SQL for MessageWeave's storage tables with the separate CLI
 package:
 
 ```bash
-pnpm dlx @messageweave/cli schema generate --dialect sqlite --out migrations/001_chatcore.sql
+pnpm dlx @messageweave/cli schema generate --dialect sqlite --out migrations/001_messageweave.sql
 ```
 
 For media and attachments, keep event payloads small and store only opaque,
-host-issued attachment references. ChatCore synchronizes the references; the
+host-issued attachment references. MessageWeave synchronizes the references; the
+
 host application owns upload, storage, authorization, delivery, and deletion:
 
 ```ts

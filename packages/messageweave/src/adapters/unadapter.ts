@@ -2,10 +2,10 @@ import { createAdapter } from "unadapter";
 import type { AdapterOptions } from "unadapter/types";
 import { getMessageWeaveTables } from "../schema";
 import type {
-	ChatCoreStorage,
-	ChatCoreStorageRow,
-	ChatCoreStorageWhere,
+	MessageWeaveStorage,
 	MessageWeaveStorageIdStrategy,
+	MessageWeaveStorageRow,
+	MessageWeaveStorageWhere,
 } from "../storage";
 
 type MessageWeaveAdapterOptions = AdapterOptions<Record<string, unknown>>;
@@ -13,27 +13,27 @@ type MessageWeaveAdapterOptions = AdapterOptions<Record<string, unknown>>;
 interface UnadapterStorage {
 	create(args: {
 		model: string;
-		data: ChatCoreStorageRow;
-	}): Promise<ChatCoreStorageRow>;
+		data: MessageWeaveStorageRow;
+	}): Promise<MessageWeaveStorageRow>;
 	findOne(args: {
 		model: string;
-		where: ChatCoreStorageWhere[];
-	}): Promise<ChatCoreStorageRow | null>;
+		where: MessageWeaveStorageWhere[];
+	}): Promise<MessageWeaveStorageRow | null>;
 	findMany(args: {
 		model: string;
-		where?: ChatCoreStorageWhere[];
+		where?: MessageWeaveStorageWhere[];
 		sortBy?: { field: string; direction: "asc" | "desc" };
 		limit?: number;
 		offset?: number;
-	}): Promise<ChatCoreStorageRow[]>;
+	}): Promise<MessageWeaveStorageRow[]>;
 	update(args: {
 		model: string;
-		where: ChatCoreStorageWhere[];
-		update: ChatCoreStorageRow;
-	}): Promise<ChatCoreStorageRow | null>;
+		where: MessageWeaveStorageWhere[];
+		update: MessageWeaveStorageRow;
+	}): Promise<MessageWeaveStorageRow | null>;
 	count(args: {
 		model: string;
-		where?: ChatCoreStorageWhere[];
+		where?: MessageWeaveStorageWhere[];
 	}): Promise<number>;
 }
 
@@ -46,7 +46,7 @@ interface UnadapterStorage {
 export function createUnadapterStorage(
 	database: MessageWeaveAdapterOptions["database"],
 	idStrategy: MessageWeaveStorageIdStrategy = "string",
-): ChatCoreStorage {
+): MessageWeaveStorage {
 	const adapter = createAdapter(getMessageWeaveTables, {
 		database,
 		advanced: {

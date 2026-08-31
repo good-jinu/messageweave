@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1788165846245,
+      "tag": "0000_jittery_edwin_jarvis",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1788166729304,
+      "tag": "0001_violet_photon",
+      "breakpoints": true
+    }
+  ]
+}

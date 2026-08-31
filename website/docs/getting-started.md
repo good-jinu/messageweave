@@ -47,7 +47,8 @@ points internally, but application code does not import or configure it. See
 import { getTestInstance } from "messageweave/test";
 
 const { flow, db } = getTestInstance();
-// `flow` is a ChatCore engine, `db` is the raw in-memory store for assertions.
+// `flow` is a MessageWeave engine, `db` is the raw in-memory store for assertions.
+
 ```
 
 ## API reference

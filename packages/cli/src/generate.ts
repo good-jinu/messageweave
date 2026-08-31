@@ -1,10 +1,10 @@
 import { Kysely, MysqlDialect, PostgresDialect, SqliteDialect } from "kysely";
 import type {
+	MessageWeaveSchemaIdStrategy as CoreMessageWeaveSchemaIdStrategy,
 	GenerateDrizzleSchemaOptions,
 	GeneratePrismaSchemaOptions,
 	MessageWeaveDrizzleDialect,
 	MessageWeavePrismaProvider,
-	MessageWeaveSchemaIdStrategy,
 } from "messageweave/schema";
 import {
 	generateDrizzleSchema,
@@ -14,52 +14,52 @@ import { generate } from "unadapter/generate";
 import { kyselyAdapter } from "unadapter/kysely";
 import { getMessageWeaveTables } from "./schema";
 
-export type ChatCoreSchemaFormat = "drizzle" | "prisma" | "sql";
+export type MessageWeaveSchemaFormat = "drizzle" | "prisma" | "sql";
 
-export type ChatCoreSchemaDialect =
+export type MessageWeaveSchemaDialect =
 	| MessageWeaveDrizzleDialect
 	| "mysql"
 	| "postgres"
 	| "sqlite";
 
-export type ChatCoreSchemaProvider = MessageWeavePrismaProvider;
+export type MessageWeaveSchemaProvider = MessageWeavePrismaProvider;
+export type MessageWeaveSchemaIdStrategy = CoreMessageWeaveSchemaIdStrategy;
+export type { MessageWeavePrismaProvider };
 
-export type ChatCoreSchemaIdStrategy = MessageWeaveSchemaIdStrategy;
-
-export interface GenerateChatCoreSqlSchemaOptions {
+export interface GenerateMessageWeaveSqlSchemaOptions {
 	format?: "sql";
-	dialect: ChatCoreSchemaDialect;
+	dialect: MessageWeaveSchemaDialect;
 	/**
 	 * Primary-key strategy for the generated `id` columns.
 	 *
 	 * @default "string"
 	 */
-	idStrategy?: ChatCoreSchemaIdStrategy;
+	idStrategy?: MessageWeaveSchemaIdStrategy;
 }
 
-export interface GenerateChatCoreDrizzleSchemaOptions {
+export interface GenerateMessageWeaveDrizzleSchemaOptions {
 	format: "drizzle";
-	dialect: ChatCoreSchemaDialect;
+	dialect: MessageWeaveSchemaDialect;
 	/**
 	 * Primary-key strategy for the generated `id` columns.
 	 *
 	 * @default "string"
 	 */
-	idStrategy?: ChatCoreSchemaIdStrategy;
+	idStrategy?: MessageWeaveSchemaIdStrategy;
 }
 
-export interface GenerateChatCorePrismaSchemaOptions {
+export interface GenerateMessageWeavePrismaSchemaOptions {
 	format: "prisma";
 	/**
 	 * Target database provider for Prisma.
 	 *
 	 * @default "postgresql"
 	 */
-	provider?: ChatCoreSchemaProvider;
+	provider?: MessageWeaveSchemaProvider;
 	/**
 	 * Alias for `provider`.
 	 */
-	dialect?: ChatCoreSchemaProvider;
+	dialect?: MessageWeaveSchemaProvider;
 	/**
 	 * Whether to include `generator client` and `datasource db` blocks at the top.
 	 *
@@ -71,15 +71,25 @@ export interface GenerateChatCorePrismaSchemaOptions {
 	 *
 	 * @default "string"
 	 */
-	idStrategy?: ChatCoreSchemaIdStrategy;
+	idStrategy?: MessageWeaveSchemaIdStrategy;
 }
 
-export type GenerateChatCoreSchemaOptions =
-	| GenerateChatCoreSqlSchemaOptions
-	| GenerateChatCoreDrizzleSchemaOptions
-	| GenerateChatCorePrismaSchemaOptions;
+export type GenerateMessageWeaveSchemaOptions =
+	| GenerateMessageWeaveSqlSchemaOptions
+	| GenerateMessageWeaveDrizzleSchemaOptions
+	| GenerateMessageWeavePrismaSchemaOptions;
 
-export type GenerateMessageWeaveSchemaOptions = GenerateChatCoreSchemaOptions;
+export type ChatCoreSchemaFormat = MessageWeaveSchemaFormat;
+export type ChatCoreSchemaDialect = MessageWeaveSchemaDialect;
+export type ChatCoreSchemaProvider = MessageWeaveSchemaProvider;
+export type ChatCoreSchemaIdStrategy = MessageWeaveSchemaIdStrategy;
+export type GenerateChatCoreSqlSchemaOptions =
+	GenerateMessageWeaveSqlSchemaOptions;
+export type GenerateChatCoreDrizzleSchemaOptions =
+	GenerateMessageWeaveDrizzleSchemaOptions;
+export type GenerateChatCorePrismaSchemaOptions =
+	GenerateMessageWeavePrismaSchemaOptions;
+export type GenerateChatCoreSchemaOptions = GenerateMessageWeaveSchemaOptions;
 
 type EmptyDatabase = Record<string, never>;
 
@@ -88,9 +98,9 @@ interface AdvancedDatabaseOptions {
 	useNumberId?: true;
 }
 
-/** Generate schema definition (SQL, Drizzle, or Prisma) for ChatCore's storage tables. */
-export async function generateChatCoreSchema(
-	options: GenerateChatCoreSchemaOptions,
+/** Generate schema definition (SQL, Drizzle, or Prisma) for MessageWeave's storage tables. */
+export async function generateMessageWeaveSchema(
+	options: GenerateMessageWeaveSchemaOptions,
 ): Promise<string> {
 	if (options.format === "drizzle") {
 		return generateDrizzleSchema(options);
@@ -112,10 +122,11 @@ export async function generateChatCoreSchema(
 		},
 		{ format: "sql" },
 	);
-	return applyChatCoreForeignKeyCascades(sql, options.dialect);
+	return applyMessageWeaveForeignKeyCascades(sql, options.dialect);
 }
 
-export const generateMessageWeaveSchema = generateChatCoreSchema;
+/** Backwards-compatible alias for {@link generateMessageWeaveSchema}. */
+export const generateChatCoreSchema = generateMessageWeaveSchema;
 
 export {
 	type GenerateDrizzleSchemaOptions,
@@ -125,7 +136,7 @@ export {
 };
 
 function createDriverlessKysely(
-	dialect: ChatCoreSchemaDialect,
+	dialect: MessageWeaveSchemaDialect,
 ): Kysely<EmptyDatabase> {
 	if (dialect === "postgres") {
 		return new Kysely<EmptyDatabase>({
@@ -151,7 +162,7 @@ function createDriverlessKysely(
 }
 
 function toAdvancedDatabaseOptions(
-	idStrategy: ChatCoreSchemaIdStrategy,
+	idStrategy: MessageWeaveSchemaIdStrategy,
 ): AdvancedDatabaseOptions {
 	if (idStrategy === "uuid" || idStrategy === "serial") {
 		return { generateId: idStrategy };
@@ -160,9 +171,9 @@ function toAdvancedDatabaseOptions(
 	return {};
 }
 
-function applyChatCoreForeignKeyCascades(
+function applyMessageWeaveForeignKeyCascades(
 	sql: string,
-	dialect: ChatCoreSchemaDialect,
+	dialect: MessageWeaveSchemaDialect,
 ): string {
 	const quotedReferences =
 		dialect === "mysql"
@@ -183,3 +194,6 @@ function applyChatCoreForeignKeyCascades(
 		sql,
 	);
 }
+
+export const applyChatCoreForeignKeyCascades =
+	applyMessageWeaveForeignKeyCascades;

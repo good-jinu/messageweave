@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { generateChatCoreSchema, generateMessageWeaveSchema } from "./generate";
 
-describe("generateChatCoreSchema", () => {
-	it("generates SQLite DDL for ChatCore tables", async () => {
-		const sql = await generateChatCoreSchema({ dialect: "sqlite" });
+describe("generateMessageWeaveSchema", () => {
+	it("generates SQLite DDL for MessageWeave tables", async () => {
+		const sql = await generateMessageWeaveSchema({ dialect: "sqlite" });
 
 		expect(sql).toContain('create table "room"');
 		expect(sql).toContain('create table "event"');
@@ -14,14 +14,14 @@ describe("generateChatCoreSchema", () => {
 	});
 
 	it("uses native JSON columns for Postgres", async () => {
-		const sql = await generateChatCoreSchema({ dialect: "postgres" });
+		const sql = await generateMessageWeaveSchema({ dialect: "postgres" });
 
 		expect(sql).toContain('"metadata" jsonb not null');
 		expect(sql).toContain('"content" jsonb not null');
 	});
 
 	it("generates Drizzle schemas", async () => {
-		const code = await generateChatCoreSchema({
+		const code = await generateMessageWeaveSchema({
 			format: "drizzle",
 			dialect: "postgres",
 		});
@@ -34,7 +34,7 @@ describe("generateChatCoreSchema", () => {
 	});
 
 	it("generates Prisma schemas", async () => {
-		const schema = await generateChatCoreSchema({
+		const schema = await generateMessageWeaveSchema({
 			format: "prisma",
 			provider: "postgresql",
 			includeDatasource: true,
@@ -49,8 +49,8 @@ describe("generateChatCoreSchema", () => {
 		);
 	});
 
-	it("works via generateMessageWeaveSchema alias", async () => {
-		const ddl = await generateMessageWeaveSchema({ dialect: "sqlite" });
+	it("works via generateChatCoreSchema backward compatibility alias", async () => {
+		const ddl = await generateChatCoreSchema({ dialect: "sqlite" });
 		expect(ddl).toContain('create table "room"');
 	});
 });

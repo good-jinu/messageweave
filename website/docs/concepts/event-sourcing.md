@@ -6,9 +6,9 @@ sidebar_position: 1
 
 # Event Sourcing & FlowEvents
 
-ChatCore is **event-sourced**: every action — a message, an edit, a membership
+MessageWeave is **event-sourced**: every action — a message, an edit, a membership
 change, a topic change — is recorded as an immutable `FlowEvent`. Current room
-state can be derived by replaying events, and ChatCore also maintains a small
+state can be derived by replaying events, and MessageWeave also maintains a small
 room-state projection so common state reads do not need to replay the whole
 timeline.
 
@@ -28,7 +28,8 @@ updated or deleted. Each event carries:
 
 ## Why immutability
 
-Because events are never mutated, ChatCore gets several properties for free:
+Because events are never mutated, MessageWeave gets several properties for free:
+
 
 - **Auditability** — the full history of a room is always recoverable.
 - **Time travel** — you can reconstruct a room's state as of any `sequenceId`.

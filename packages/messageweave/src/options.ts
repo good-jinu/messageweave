@@ -1,28 +1,36 @@
-import type { ChatCoreStorage } from "./storage";
+import type { MessageWeaveStorage } from "./storage";
+import type { MessageWeaveHooks } from "./types";
 
 /**
- * Configuration for {@link createChatCore}.
+ * Configuration for {@link createMessageWeave}.
  */
-export interface ChatCoreOptions {
+export interface MessageWeaveOptions {
 	/**
-	 * Storage backend used by ChatCore. Applications can implement this with
+	 * Storage backend used by MessageWeave. Applications can implement this with
 	 * Kysely, Drizzle, Prisma, raw SQL, or any other persistence layer.
 	 */
-	storage: ChatCoreStorage;
+	storage: MessageWeaveStorage;
 	/**
-	 * Default page size for {@link ChatCore.getRoomTimeline} and
-	 * {@link ChatCore.getSyncStream}.
+	 * Default page size for {@link MessageWeave.getRoomTimeline} and
+	 * {@link MessageWeave.getSyncStream}.
 	 *
 	 * @default 100
 	 */
 	defaultLimit?: number;
 	/**
 	 * Maximum allowed byte length of the serialized `content` payload per
-	 * event (`JSON.stringify` UTF-8 byte length). When set, {@link ChatCore.publishEvent}
-	 * rejects oversized content with a `ChatCoreError`. The host owns this
+	 * event (`JSON.stringify` UTF-8 byte length). When set, {@link MessageWeave.publishEvent}
+	 * rejects oversized content with a `MessageWeaveError`. The host owns this
 	 * number; omit for no limit (today's behavior).
 	 *
 	 * @default undefined (unbounded)
 	 */
 	maxContentBytes?: number;
+	/**
+	 * Lifecycle hooks for intercepting and reacting to engine actions.
+	 */
+	hooks?: MessageWeaveHooks;
 }
+
+/** Backwards-compatible alias for {@link MessageWeaveOptions}. */
+export type ChatCoreOptions = MessageWeaveOptions;

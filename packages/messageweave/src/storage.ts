@@ -1,5 +1,5 @@
-/** Primitive values supported in ChatCore storage filters. */
-export type ChatCoreStorageValue =
+/** Primitive values supported in MessageWeave storage filters. */
+export type MessageWeaveStorageValue =
 	| string
 	| number
 	| boolean
@@ -10,8 +10,11 @@ export type ChatCoreStorageValue =
 	| Temporal.ZonedDateTime
 	| null;
 
-/** Query operators supported by ChatCore storage implementations. */
-export type ChatCoreStorageOperator =
+/** Backwards-compatible alias for {@link MessageWeaveStorageValue}. */
+export type ChatCoreStorageValue = MessageWeaveStorageValue;
+
+/** Query operators supported by MessageWeave storage implementations. */
+export type MessageWeaveStorageOperator =
 	| "eq"
 	| "ne"
 	| "lt"
@@ -23,20 +26,29 @@ export type ChatCoreStorageOperator =
 	| "starts_with"
 	| "ends_with";
 
+/** Backwards-compatible alias for {@link MessageWeaveStorageOperator}. */
+export type ChatCoreStorageOperator = MessageWeaveStorageOperator;
+
 /** A single storage-layer filter predicate. */
-export interface ChatCoreStorageWhere {
+export interface MessageWeaveStorageWhere {
 	/** Logical field name to filter. */
 	field: string;
 	/** Value compared by the selected operator. */
-	value: ChatCoreStorageValue;
+	value: MessageWeaveStorageValue;
 	/** Comparison operator; defaults to equality. */
-	operator?: ChatCoreStorageOperator;
+	operator?: MessageWeaveStorageOperator;
 	/** Predicate group; defaults to `AND`. */
 	connector?: "AND" | "OR";
 }
 
+/** Backwards-compatible alias for {@link MessageWeaveStorageWhere}. */
+export type ChatCoreStorageWhere = MessageWeaveStorageWhere;
+
 /** A raw storage row, before/after domain mapping. */
-export type ChatCoreStorageRow = Record<string, unknown>;
+export type MessageWeaveStorageRow = Record<string, unknown>;
+
+/** Backwards-compatible alias for {@link MessageWeaveStorageRow}. */
+export type ChatCoreStorageRow = MessageWeaveStorageRow;
 
 /** Primary-key strategy shared by built-in MessageWeave storage adapters. */
 export type MessageWeaveStorageIdStrategy =
@@ -45,35 +57,38 @@ export type MessageWeaveStorageIdStrategy =
 	| "string"
 	| "uuid";
 
-/** The narrow CRUD/query surface ChatCore needs from a storage backend. */
-export interface ChatCoreStorage {
+/** The narrow CRUD/query surface MessageWeave needs from a storage backend. */
+export interface MessageWeaveStorage {
 	/** Insert a row and return the stored representation. */
 	create(args: {
 		model: string;
-		data: ChatCoreStorageRow;
-	}): Promise<ChatCoreStorageRow>;
+		data: MessageWeaveStorageRow;
+	}): Promise<MessageWeaveStorageRow>;
 	/** Find the first row matching every supplied predicate. */
 	findOne(args: {
 		model: string;
-		where: ChatCoreStorageWhere[];
-	}): Promise<ChatCoreStorageRow | null>;
+		where: MessageWeaveStorageWhere[];
+	}): Promise<MessageWeaveStorageRow | null>;
 	/** Find rows with optional filtering, ordering, and pagination. */
 	findMany(args: {
 		model: string;
-		where?: ChatCoreStorageWhere[];
+		where?: MessageWeaveStorageWhere[];
 		sortBy?: { field: string; direction: "asc" | "desc" };
 		limit?: number;
 		offset?: number;
-	}): Promise<ChatCoreStorageRow[]>;
+	}): Promise<MessageWeaveStorageRow[]>;
 	/** Update matching rows and return one updated representation when available. */
 	update(args: {
 		model: string;
-		where: ChatCoreStorageWhere[];
-		update: ChatCoreStorageRow;
-	}): Promise<ChatCoreStorageRow | null>;
+		where: MessageWeaveStorageWhere[];
+		update: MessageWeaveStorageRow;
+	}): Promise<MessageWeaveStorageRow | null>;
 	/** Count rows matching the optional predicates. */
 	count(args: {
 		model: string;
-		where?: ChatCoreStorageWhere[];
+		where?: MessageWeaveStorageWhere[];
 	}): Promise<number>;
 }
+
+/** Backwards-compatible alias for {@link MessageWeaveStorage}. */
+export type ChatCoreStorage = MessageWeaveStorage;

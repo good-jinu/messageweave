@@ -6,15 +6,17 @@ import { createRoomMethods } from "./engine/rooms";
 import { createStateMethods } from "./engine/state";
 import { createSyncMethods } from "./engine/sync";
 import { createTimelineMethods } from "./engine/timeline";
-import type { ChatCoreOptions } from "./options";
+import type { MessageWeaveOptions } from "./options";
 import type {
 	CreateRoomInput,
 	DeleteMessageInput,
 	EditMessageInput,
+	EventListener,
 	FlowEvent,
 	GetSyncStreamOptions,
 	GetTimelineOptions,
 	ListRoomsOptions,
+	PublishContext,
 	PublishEventInput,
 	PublishEventResult,
 	Room,
@@ -22,10 +24,10 @@ import type {
 	SyncStreamResult,
 } from "./types";
 
-/** The ChatCore engine instance returned by {@link createChatCore}. */
-export interface ChatCore {
+/** The MessageWeave engine instance returned by {@link createMessageWeave}. */
+export interface MessageWeave {
 	/** The resolved options. */
-	readonly options: ChatCoreOptions;
+	readonly options: MessageWeaveOptions;
 	/** Create a conversation room. */
 	createRoom(input: CreateRoomInput): Promise<Room>;
 	/** Fetch a room by id, or return `null` when it does not exist. */
@@ -49,17 +51,32 @@ export interface ChatCore {
 	): Promise<FlowEvent[]>;
 	/** Read globally ordered events after a synchronization cursor. */
 	getSyncStream(options?: GetSyncStreamOptions): Promise<SyncStreamResult>;
+	/**
+	 * Subscribe to all newly published events in-process.
+	 * Returns an unsubscribe callback function.
+	 *
+	 * @example
+	 * ```ts
+	 * const unsubscribe = flow.onEvent((event) => {
+	 *   wsServer.to(event.roomId).emit("event", event);
+	 * });
+	 * ```
+	 */
+	onEvent(listener: EventListener): () => void;
 }
+
+/** Backwards-compatible alias for {@link MessageWeave}. */
+export type ChatCore = MessageWeave;
 
 /**
  * Create an in-process, event-sourced messaging engine backed by the supplied
- * ChatCore storage backend.
+ * MessageWeave storage backend.
  *
  * @example
  * ```ts
- * import { createChatCore } from "messageweave";
+ * import { createMessageWeave } from "messageweave";
  *
- * const flow = createChatCore({ storage });
+ * const flow = createMessageWeave({ storage });
  * const room = await flow.createRoom({ creatorId: "u1" });
  * await flow.sendMessage({
  *   roomId: room.id,
@@ -69,23 +86,40 @@ export interface ChatCore {
  * const { events, nextToken } = await flow.getSyncStream({ sinceSequenceId: 0 });
  * ```
  */
-export function createChatCore(options: ChatCoreOptions): ChatCore {
+export function createMessageWeave(options: MessageWeaveOptions): MessageWeave {
 	const adapter = createFlowAdapter(options);
 	const sequencer = createSequencer(adapter);
 	const defaultLimit = options.defaultLimit ?? 100;
+	const listeners = new Set<EventListener>();
+
+	const emitEvent = async (event: FlowEvent, context: PublishContext) => {
+		for (const listener of listeners) {
+			await listener(event, context);
+		}
+	};
 
 	const { createRoom, getRoom, listRooms } = createRoomMethods(
 		adapter,
 		defaultLimit,
+		options.hooks,
 	);
 	const { publishEvent } = createPublishMethod(adapter, sequencer, {
 		maxContentBytes: options.maxContentBytes,
+		hooks: options.hooks,
+		emitEvent,
 	});
 	const { sendMessage, editMessage, deleteMessage } =
 		createMessageMethods(publishEvent);
 	const { getRoomState } = createStateMethods(adapter);
 	const { getRoomTimeline } = createTimelineMethods(adapter, defaultLimit);
 	const { getSyncStream } = createSyncMethods(adapter, defaultLimit);
+
+	function onEvent(listener: EventListener): () => void {
+		listeners.add(listener);
+		return () => {
+			listeners.delete(listener);
+		};
+	}
 
 	return {
 		options,
@@ -99,5 +133,9 @@ export function createChatCore(options: ChatCoreOptions): ChatCore {
 		getRoomState,
 		getRoomTimeline,
 		getSyncStream,
+		onEvent,
 	};
 }
+
+/** Backwards-compatible alias for {@link createMessageWeave}. */
+export const createChatCore = createMessageWeave;

@@ -1,9 +1,9 @@
 import type {
-	ChatCoreSchemaDialect,
-	ChatCoreSchemaFormat,
-	ChatCoreSchemaIdStrategy,
-	ChatCoreSchemaProvider,
-	GenerateChatCoreSchemaOptions,
+	GenerateMessageWeaveSchemaOptions,
+	MessageWeaveSchemaDialect,
+	MessageWeaveSchemaFormat,
+	MessageWeaveSchemaIdStrategy,
+	MessageWeaveSchemaProvider,
 } from "./generate";
 
 export type CliCommand =
@@ -11,7 +11,7 @@ export type CliCommand =
 	| { type: "schema-generate"; options: SchemaGenerateCommandOptions }
 	| { type: "version" };
 
-export type SchemaGenerateCommandOptions = GenerateChatCoreSchemaOptions & {
+export type SchemaGenerateCommandOptions = GenerateMessageWeaveSchemaOptions & {
 	out?: string;
 };
 
@@ -53,11 +53,11 @@ export function parseCliArgs(argv: string[]): ParseCliArgsResult {
 }
 
 function parseSchemaGenerateOptions(args: string[]): ParseCliArgsResult {
-	let format: ChatCoreSchemaFormat = "sql";
+	let format: MessageWeaveSchemaFormat = "sql";
 	let dialect: string | undefined;
-	let provider: ChatCoreSchemaProvider | undefined;
+	let provider: MessageWeaveSchemaProvider | undefined;
 	let includeDatasource: boolean | undefined;
-	let idStrategy: ChatCoreSchemaIdStrategy | undefined;
+	let idStrategy: MessageWeaveSchemaIdStrategy | undefined;
 	let out: string | undefined;
 
 	for (let index = 0; index < args.length; index += 1) {
@@ -220,18 +220,18 @@ function parseOptionToken(
 	return { ok: true, consumedNext: true, name: token, value: nextToken };
 }
 
-function isFormat(value: string): value is ChatCoreSchemaFormat {
+function isFormat(value: string): value is MessageWeaveSchemaFormat {
 	return FORMATS.some((format) => format === value);
 }
 
-function isDialect(value: string): value is ChatCoreSchemaDialect {
+function isDialect(value: string): value is MessageWeaveSchemaDialect {
 	return DIALECTS.some((dialect) => dialect === value);
 }
 
-function isPrismaProvider(value: string): value is ChatCoreSchemaProvider {
+function isPrismaProvider(value: string): value is MessageWeaveSchemaProvider {
 	return PRISMA_PROVIDERS.some((p) => p === value);
 }
 
-function isIdStrategy(value: string): value is ChatCoreSchemaIdStrategy {
+function isIdStrategy(value: string): value is MessageWeaveSchemaIdStrategy {
 	return ID_STRATEGIES.some((strategy) => strategy === value);
 }

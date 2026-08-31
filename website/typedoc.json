@@ -32,5 +32,5 @@
     "notDocumented": true,
     "notExported": true
   },
-  "intentionallyNotExported": ["ChatCoreErrorConstructor"]
+  "intentionallyNotExported": ["MessageWeaveErrorConstructor"]
 }

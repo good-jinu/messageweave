@@ -6,19 +6,21 @@
     "build": "pnpm -C ../../packages/messageweave build && tsc --project tsconfig.json",
     "clean": "rm -rf dist",
     "db:init": "pnpm build && node dist/init-db.js",
-    "db:reset": "rm -f data/chatcore.sqlite",
+    "db:reset": "rm -f data/messageweave.sqlite",
     "dev": "pnpm build && node dist/server.js",
-    "schema:generate": "pnpm -C ../../packages/cli build && messageweave schema generate --dialect sqlite --out schema/chatcore.sql",
+    "migration:generate": "drizzle-kit generate",
+    "schema:generate": "pnpm -C ../../packages/cli build && messageweave schema generate --format drizzle --dialect sqlite --out src/db/schema/messageweave.ts",
     "start": "node dist/server.js"
   },
   "dependencies": {
     "better-sqlite3": "^12.11.1",
-    "messageweave": "workspace:*",
-    "kysely": "^0.29.2"
+    "drizzle-orm": "^0.45.1",
+    "messageweave": "workspace:*"
   },
   "devDependencies": {
     "@messageweave/cli": "workspace:*",
     "@types/better-sqlite3": "^7.6.13",
+    "drizzle-kit": "^0.31.9",
     "typescript": "catalog:"
   }
 }

@@ -1,10 +1,10 @@
 import { memoryAdapter } from "unadapter/memory";
 import { describe, expect, it } from "vitest";
-import { createChatCore } from "../chatcore";
+import { createMessageWeave } from "../chatcore";
 import { createUnadapterStorage } from "./unadapter";
 
 describe("createUnadapterStorage", () => {
-	it("adapts an Unadapter database factory to ChatCoreStorage", async () => {
+	it("adapts an Unadapter database factory to MessageWeaveStorage", async () => {
 		const database: Record<string, Record<string, unknown>[]> = {
 			room: [],
 			event: [],
@@ -13,7 +13,7 @@ describe("createUnadapterStorage", () => {
 			sequence: [],
 		};
 		const storage = createUnadapterStorage(memoryAdapter(database));
-		const flow = createChatCore({ storage });
+		const flow = createMessageWeave({ storage });
 
 		const room = await flow.createRoom({ creatorId: "u1" });
 		const result = await flow.sendMessage({
