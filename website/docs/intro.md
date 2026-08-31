@@ -15,7 +15,7 @@ engine are left entirely in your hands.
 ## Why MessageWeave
 
 - **Database agnostic** — use the built-in Drizzle, Prisma, Kysely, Knex,
-  MongoDB, or Sumak entry point, or supply your own ChatCore storage backend.
+  MongoDB, or Sumak entry point, or supply your own MessageWeave storage backend.
 - **Immutable event sourcing** — every action in a room (a message, an edit, a
   membership or topic change) is an immutable `FlowEvent`.
 - **Trivial real-time sync** — a single, monotonically increasing `sequenceId`
@@ -25,13 +25,14 @@ engine are left entirely in your hands.
 
 ## How it fits together
 
-ChatCore is just the engine. You bring:
+MessageWeave is just the engine. You bring:
 
 1. **A database** — connect Drizzle, Prisma, Kysely, Knex, MongoDB, or Sumak
    through MessageWeave's database-specific entry points. You can also
-   implement `ChatCoreStorage` for another persistence layer.
+   implement `MessageWeaveStorage` for another persistence layer.
 2. **A transport** — expose the engine's methods over HTTP, WebSockets, gRPC,
    or anything else.
+
 
 The engine handles the hard parts: immutable event storage, room state
 reduction, threaded timelines, and a single global cursor for real-time sync.

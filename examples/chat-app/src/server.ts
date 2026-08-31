@@ -4,56 +4,15 @@ import { createServer } from "node:http";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 import Database from "better-sqlite3";
-import type { RawBuilder } from "kysely";
-import { Kysely, SqliteDialect, sql } from "kysely";
-import type {
-	ChatCoreStorage,
-	ChatCoreStorageRow,
-	ChatCoreStorageWhere,
-	FlowEvent,
-	JsonObject,
-	Room,
-} from "messageweave";
-import { createChatCore, generateId } from "messageweave";
-import { ensureChatCoreSchema } from "./schema.js";
+import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/better-sqlite3";
+import type { FlowEvent, JsonObject, Room } from "messageweave";
+import { createMessageWeave } from "messageweave";
+import { drizzleAdapter } from "messageweave/drizzle";
+import * as schema from "./db/schema/index.js";
+import { ensureMessageWeaveSchema } from "./schema.js";
 
 type JsonRecord = Record<string, unknown>;
-
-interface ChatCoreSqliteSchema {
-	room: {
-		id: string;
-		creatorId: string;
-		createdAt: number;
-		metadata: string;
-	};
-	event: {
-		id: string;
-		roomId: string;
-		senderId: string;
-		type: string;
-		stateKey: string | null;
-		content: string;
-		timestamp: number;
-		sequenceId: number;
-	};
-	eventEdge: {
-		id: string;
-		eventId: string;
-		parentEventId: string;
-	};
-	roomState: {
-		id: string;
-		roomId: string;
-		eventType: string;
-		stateKey: string;
-		eventId: string;
-	};
-	sequence: {
-		id: string;
-		name: string;
-		value: number;
-	};
-}
 
 interface SerializedRoom {
 	id: string;
@@ -93,202 +52,73 @@ const host = process.env.HOST ?? "127.0.0.1";
 const port = Number.parseInt(process.env.PORT ?? "5173", 10);
 const projectDir = fileURLToPath(new URL("../", import.meta.url));
 const publicDir = join(projectDir, "public");
-const schemaPath = join(projectDir, "schema", "chatcore.sql");
+const migrationsFolder = join(projectDir, "drizzle");
 const dataDir = join(projectDir, "data");
 const databasePath =
-	process.env.DATABASE_URL ?? join(dataDir, "chatcore.sqlite");
+	process.env.DATABASE_URL ?? join(dataDir, "messageweave.sqlite");
 const clientScriptPath = join(projectDir, "dist", "client.js");
 const textDecoder = new TextDecoder();
 const textEncoder = new TextEncoder();
 
 await mkdir(dataDir, { recursive: true });
 const sqlite = new Database(databasePath);
-await ensureChatCoreSchema({ db: sqlite, databasePath, schemaPath });
-const database = new Kysely<ChatCoreSqliteSchema>({
-	dialect: new SqliteDialect({ database: sqlite }),
-});
+const database = drizzle(sqlite, { schema });
+ensureMessageWeaveSchema({ db: database, sqlite, migrationsFolder });
 
-const flow = createChatCore({
-	storage: createKyselyChatCoreStorage(database),
+const flow = createMessageWeave({
+	storage: drizzleAdapter(database, { provider: "sqlite", schema }),
 	defaultLimit: 100,
+	hooks: {
+		onPublish: (event) => {
+			broadcast({ type: "event", event: serializeEvent(event) });
+		},
+		onRoomCreated: (room) => {
+			broadcast({ type: "room.created", room: serializeRoom(room) });
+		},
+	},
 });
 const rooms = new Map<string, Room>();
 const clients = new Set<SseClient>();
 
+await seedUsers();
 await loadRooms();
 if (rooms.size === 0) {
 	const general = await createRoom({
-		creatorId: "system",
+		creatorId: "u_system",
 		name: "General",
-		topic: "A shared room backed by ChatCore events in SQLite.",
+		topic: "A shared room backed by MessageWeave events in SQLite.",
 	});
 	await publishSystemMessage(
 		general.id,
-		"Welcome. This room is persisted in examples/chat-app/data/chatcore.sqlite.",
+		"Welcome. This room is persisted in examples/chat-app/data/messageweave.sqlite.",
 	);
 }
 
-function createKyselyChatCoreStorage(
-	db: Kysely<ChatCoreSqliteSchema>,
-): ChatCoreStorage {
-	return {
-		async create({ model, data }) {
-			const table = asTableName(model);
-			const row = encodeStorageRow({ id: generateId(), ...data });
-			const entries = Object.entries(row);
-			await sql`
-				insert into ${sql.table(table)}
-				(${sql.join(entries.map(([field]) => sql.id(field)))})
-				values (${sql.join(entries.map(([, value]) => value))})
-			`.execute(db);
-			return decodeStorageRow(row);
-		},
-		async findOne({ model, where }) {
-			const rows = await this.findMany({ model, where, limit: 1 });
-			return rows[0] ?? null;
-		},
-		async findMany({ model, where, sortBy, limit, offset }) {
-			const table = asTableName(model);
-			const order = sortBy
-				? sql`order by ${sql.id(sortBy.field)} ${sql.raw(sortBy.direction)}`
-				: sql``;
-			const pageLimit = limit !== undefined ? sql`limit ${limit}` : sql``;
-			const pageOffset = offset !== undefined ? sql`offset ${offset}` : sql``;
-			const result = await sql<Record<string, unknown>>`
-				select * from ${sql.table(table)}
-				${whereSql(where)}
-				${order}
-				${pageLimit}
-				${pageOffset}
-			`.execute(db);
-			const rows = result.rows;
-			return rows.map((row) => decodeStorageRow(row));
-		},
-		async update({ model, where, update }) {
-			const existing = await this.findOne({ model, where });
-			if (existing === null) return null;
-
-			const table = asTableName(model);
-			const entries = Object.entries(encodeStorageRow(update));
-			await sql`
-				update ${sql.table(table)}
-				set ${sql.join(
-					entries.map(([field, value]) => sql`${sql.id(field)} = ${value}`),
-				)}
-				${whereSql(where)}
-			`.execute(db);
-			return { ...existing, ...update };
-		},
-		async count({ model, where }) {
-			const table = asTableName(model);
-			const result = await sql<{ count: number }>`
-				select count(*) as count from ${sql.table(table)}
-				${whereSql(where)}
-			`.execute(db);
-			return Number(result.rows[0]?.count ?? 0);
-		},
-	};
-}
-
-function asTableName(model: string): keyof ChatCoreSqliteSchema {
-	if (
-		model === "room" ||
-		model === "event" ||
-		model === "eventEdge" ||
-		model === "roomState" ||
-		model === "sequence"
-	) {
-		return model;
+async function seedUsers(): Promise<void> {
+	const existing = await database.select().from(schema.user).all();
+	if (existing.length === 0) {
+		const now = Date.now();
+		await database.insert(schema.user).values([
+			{
+				id: "u_alice",
+				username: "alice",
+				displayName: "Alice",
+				createdAt: now,
+			},
+			{
+				id: "u_bob",
+				username: "bob",
+				displayName: "Bob",
+				createdAt: now,
+			},
+			{
+				id: "u_charlie",
+				username: "charlie",
+				displayName: "Charlie",
+				createdAt: now,
+			},
+		]);
 	}
-	throw new Error(`Unknown ChatCore storage model: ${model}`);
-}
-
-function encodeStorageRow(
-	row: ChatCoreStorageRow,
-): Record<string, string | number | null> {
-	const encoded: Record<string, string | number | null> = {};
-	for (const [key, value] of Object.entries(row)) {
-		encoded[key] =
-			key === "metadata" || key === "content"
-				? JSON.stringify(value ?? {})
-				: encodeStorageValue(value);
-	}
-	return encoded;
-}
-
-function encodeStorageValue(value: unknown): string | number | null {
-	if (
-		typeof value === "string" ||
-		typeof value === "number" ||
-		value === null
-	) {
-		return value;
-	}
-	if (typeof value === "boolean") return value ? 1 : 0;
-	if (isTemporalValue(value)) return value.toString();
-	return String(value);
-}
-
-function isTemporalValue(value: unknown): value is Temporal.Instant {
-	return (
-		typeof value === "object" &&
-		value !== null &&
-		Object.prototype.toString.call(value).startsWith("[object Temporal.")
-	);
-}
-
-function decodeStorageRow(row: Record<string, unknown>): ChatCoreStorageRow {
-	const decoded: ChatCoreStorageRow = {};
-	for (const [key, value] of Object.entries(row)) {
-		decoded[key] =
-			(key === "metadata" || key === "content") && typeof value === "string"
-				? JSON.parse(value)
-				: value;
-	}
-	return decoded;
-}
-
-function whereSql(where?: ChatCoreStorageWhere[]): RawBuilder<unknown> {
-	if (where === undefined || where.length === 0) return sql``;
-	return sql`where ${sql.join(where.map(whereClauseSql), sql` and `)}`;
-}
-
-function whereClauseSql({
-	field,
-	value,
-	operator = "eq",
-}: ChatCoreStorageWhere): RawBuilder<unknown> {
-	if (operator === "in") {
-		if (!Array.isArray(value)) {
-			throw new Error(`Expected array value for IN filter on ${field}`);
-		}
-		return sql`${sql.id(field)} in (${sql.join(value)})`;
-	}
-	if (value === null && operator === "eq") return sql`${sql.id(field)} is null`;
-	if (value === null && operator === "ne") {
-		return sql`${sql.id(field)} is not null`;
-	}
-
-	const comparisonOperator = {
-		eq: "=",
-		ne: "!=",
-		lt: "<",
-		lte: "<=",
-		gt: ">",
-		gte: ">=",
-		contains: "like",
-		starts_with: "like",
-		ends_with: "like",
-	}[operator];
-	const comparisonValue =
-		operator === "contains"
-			? `%${String(value)}%`
-			: operator === "starts_with"
-				? `${String(value)}%`
-				: operator === "ends_with"
-					? `%${String(value)}`
-					: value;
-	return sql`${sql.id(field)} ${sql.raw(comparisonOperator)} ${comparisonValue}`;
 }
 
 function jsonResponse(
@@ -462,9 +292,47 @@ async function handleApi(
 	url: URL,
 ): Promise<void> {
 	if (request.method === "GET" && url.pathname === "/api/bootstrap") {
+		const users = await database.select().from(schema.user).all();
 		jsonResponse(response, 200, {
 			rooms: Array.from(rooms.values()).map(serializeRoom),
+			users,
 		});
+		return;
+	}
+
+	if (request.method === "GET" && url.pathname === "/api/users") {
+		const users = await database.select().from(schema.user).all();
+		jsonResponse(response, 200, { users });
+		return;
+	}
+
+	if (request.method === "POST" && url.pathname === "/api/users") {
+		const input = await readJson(request);
+		const username = asString(input.username)
+			.toLowerCase()
+			.replace(/[^a-z0-9_-]/g, "");
+		const displayName = asString(input.displayName, username);
+		if (username.length === 0) {
+			jsonResponse(response, 400, { error: "Username is required" });
+			return;
+		}
+		const existing = await database
+			.select()
+			.from(schema.user)
+			.where(eq(schema.user.username, username))
+			.get();
+		if (existing) {
+			jsonResponse(response, 200, { user: existing });
+			return;
+		}
+		const newUser = {
+			id: `u_${username}`,
+			username,
+			displayName,
+			createdAt: Date.now(),
+		};
+		await database.insert(schema.user).values(newUser);
+		jsonResponse(response, 201, { user: newUser });
 		return;
 	}
 
@@ -475,7 +343,6 @@ async function handleApi(
 		const topic = asString(input.topic);
 		const room = await createRoom({ creatorId, name, topic });
 		const serialized = serializeRoom(room);
-		broadcast({ type: "room.created", room: serialized });
 		jsonResponse(response, 201, { room: serialized });
 		return;
 	}
@@ -506,10 +373,8 @@ async function handleApi(
 		const userId = asString(input.userId, "guest");
 		const displayName = asString(input.displayName, userId);
 		const { event } = await publishMemberState(roomId, userId, displayName);
-		const payload: SsePayload = { type: "event", event: serializeEvent(event) };
-		broadcast(payload);
 		jsonResponse(response, 200, {
-			event: payload.event,
+			event: serializeEvent(event),
 			members: await listMembers(roomId),
 		});
 		return;
@@ -536,9 +401,7 @@ async function handleApi(
 			type: "message.text",
 			content: { body, displayName },
 		});
-		const payload: SsePayload = { type: "event", event: serializeEvent(event) };
-		broadcast(payload);
-		jsonResponse(response, 201, { event: payload.event });
+		jsonResponse(response, 201, { event: serializeEvent(event) });
 		return;
 	}
 
@@ -571,9 +434,7 @@ async function handleApi(
 			body,
 			content: { displayName },
 		});
-		const payload: SsePayload = { type: "event", event: serializeEvent(event) };
-		broadcast(payload);
-		jsonResponse(response, 200, { event: payload.event });
+		jsonResponse(response, 200, { event: serializeEvent(event) });
 		return;
 	}
 
@@ -597,9 +458,7 @@ async function handleApi(
 			messageId,
 			reason,
 		});
-		const payload: SsePayload = { type: "event", event: serializeEvent(event) };
-		broadcast(payload);
-		jsonResponse(response, 200, { event: payload.event });
+		jsonResponse(response, 200, { event: serializeEvent(event) });
 		return;
 	}
 
@@ -688,5 +547,5 @@ const server = createServer((request, response) => {
 });
 
 server.listen(port, host, () => {
-	console.log(`ChatCore example listening on http://${host}:${port}`);
+	console.log(`MessageWeave example listening on http://${host}:${port}`);
 });

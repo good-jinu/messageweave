@@ -1,6 +1,7 @@
-import type { ChatCore } from "../chatcore";
-import { createChatCore } from "../chatcore";
-import type { ChatCoreOptions } from "../options";
+import type { MessageWeave } from "../messageweave";
+import { createMessageWeave } from "../messageweave";
+
+import type { MessageWeaveOptions } from "../options";
 import type { MemoryDatabase } from "./memory-storage";
 import { createMemoryStorage } from "./memory-storage";
 
@@ -8,18 +9,18 @@ export type { MemoryDatabase } from "./memory-storage";
 
 /** The object returned by {@link getTestInstance}. */
 export interface TestInstance {
-	/** A ChatCore engine backed by an in-memory store. */
-	flow: ChatCore;
+	/** A MessageWeave engine backed by an in-memory store. */
+	flow: MessageWeave;
 	/** The raw in-memory tables, for direct assertions. */
 	db: MemoryDatabase;
 }
 
 /**
- * Spin up a ChatCore engine backed by the corrected in-memory adapter.
+ * Spin up a MessageWeave engine backed by the corrected in-memory adapter.
  * Mirrors the `getTestInstance()` ergonomics used elsewhere in the workspace.
  */
 export function getTestInstance(
-	options?: Partial<Omit<ChatCoreOptions, "storage">>,
+	options?: Partial<Omit<MessageWeaveOptions, "storage">>,
 ): TestInstance {
 	const db: MemoryDatabase = {
 		room: [],
@@ -28,7 +29,7 @@ export function getTestInstance(
 		roomState: [],
 		sequence: [],
 	};
-	const flow = createChatCore({
+	const flow = createMessageWeave({
 		storage: createMemoryStorage(db),
 		...options,
 	});

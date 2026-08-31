@@ -1,18 +1,18 @@
 # @messageweave/cli
 
-Command-line tools for ChatCore.
+Command-line tools for MessageWeave.
 
 The CLI is shipped separately from the runtime `messageweave` package so application
 code does not install CLI-only dependencies. Internally, this package uses
-`unadapter` to generate database schema SQL from ChatCore's canonical storage
+`unadapter` to generate database schema SQL from MessageWeave's canonical storage
 schema.
 
 ## Usage
 
-Generate starter SQL for ChatCore's storage tables:
+Generate starter SQL for MessageWeave's storage tables:
 
 ```bash
-pnpm dlx @messageweave/cli schema generate --dialect sqlite --out migrations/001_chatcore.sql
+pnpm dlx @messageweave/cli schema generate --dialect sqlite --out migrations/001_messageweave.sql
 ```
 
 Print SQL to stdout:
@@ -42,7 +42,7 @@ Options:
 SQLite:
 
 ```bash
-pnpm dlx @messageweave/cli schema generate --dialect sqlite --out migrations/001_chatcore.sql
+pnpm dlx @messageweave/cli schema generate --dialect sqlite --out migrations/001_messageweave.sql
 ```
 
 Postgres with database-generated UUID ids:
@@ -59,7 +59,7 @@ pnpm dlx @messageweave/cli schema generate --dialect mysql
 
 ## Scope
 
-The generated SQL creates ChatCore's five storage tables:
+The generated SQL creates MessageWeave's five storage tables:
 
 - `room`
 - `event`
@@ -68,5 +68,6 @@ The generated SQL creates ChatCore's five storage tables:
 - `sequence`
 
 This CLI only generates schema DDL. Your application still owns the
-`ChatCoreStorage` implementation, including JSON serialization, row decoding,
+`MessageWeaveStorage` implementation, including JSON serialization, row decoding,
 query translation, and any database-specific atomicity requirements.
+

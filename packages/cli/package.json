@@ -1,7 +1,8 @@
 {
   "name": "@messageweave/cli",
   "version": "0.1.0",
-  "description": "Command-line tools for ChatCore.",
+  "description": "Command-line tools for MessageWeave.",
+
   "type": "module",
   "license": "MIT",
   "sideEffects": false,

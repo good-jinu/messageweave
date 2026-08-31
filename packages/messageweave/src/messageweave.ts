@@ -6,26 +6,32 @@ import { createRoomMethods } from "./engine/rooms";
 import { createStateMethods } from "./engine/state";
 import { createSyncMethods } from "./engine/sync";
 import { createTimelineMethods } from "./engine/timeline";
-import type { ChatCoreOptions } from "./options";
+import type { MessageWeaveOptions } from "./options";
+import { createMemoryPubSub } from "./realtime/pubsub";
+import { createSubscribeMethod } from "./realtime/subscribe";
 import type {
 	CreateRoomInput,
 	DeleteMessageInput,
 	EditMessageInput,
+	EventListener,
+	EventStream,
 	FlowEvent,
 	GetSyncStreamOptions,
 	GetTimelineOptions,
 	ListRoomsOptions,
+	PublishContext,
 	PublishEventInput,
 	PublishEventResult,
 	Room,
 	SendMessageInput,
+	SubscribeOptions,
 	SyncStreamResult,
 } from "./types";
 
-/** The ChatCore engine instance returned by {@link createChatCore}. */
-export interface ChatCore {
+/** The MessageWeave engine instance returned by {@link createMessageWeave}. */
+export interface MessageWeave {
 	/** The resolved options. */
-	readonly options: ChatCoreOptions;
+	readonly options: MessageWeaveOptions;
 	/** Create a conversation room. */
 	createRoom(input: CreateRoomInput): Promise<Room>;
 	/** Fetch a room by id, or return `null` when it does not exist. */
@@ -49,17 +55,51 @@ export interface ChatCore {
 	): Promise<FlowEvent[]>;
 	/** Read globally ordered events after a synchronization cursor. */
 	getSyncStream(options?: GetSyncStreamOptions): Promise<SyncStreamResult>;
+	/**
+	 * Subscribe to real-time events as an asynchronous iterable stream.
+	 *
+	 * When `sinceSequenceId` is provided, missed historical events are fetched and streamed
+	 * first before seamlessly transitioning to live events without gaps or duplicates.
+	 *
+	 * Compatible with `for await`, SSE (Server-Sent Events), WebSockets, and Edge workers.
+	 *
+	 * @example
+	 * ```ts
+	 * // Stream room events with catch-up and abort support
+	 * const controller = new AbortController();
+	 * for await (const event of flow.subscribe({ roomId: "general", sinceSequenceId: 100, signal: controller.signal })) {
+	 *   sendToClient(event);
+	 * }
+	 * ```
+	 */
+	subscribe(options?: SubscribeOptions): EventStream;
+
+	/**
+	 * Subscribe to all newly published events in-process.
+	 * Returns an unsubscribe callback function.
+	 *
+	 * @example
+	 * ```ts
+	 * const unsubscribe = flow.onEvent((event) => {
+	 *   wsServer.to(event.roomId).emit("event", event);
+	 * });
+	 * ```
+	 */
+	onEvent(listener: EventListener): () => void;
 }
+
+/** Backwards-compatible alias for {@link MessageWeave}. */
+export type ChatCore = MessageWeave;
 
 /**
  * Create an in-process, event-sourced messaging engine backed by the supplied
- * ChatCore storage backend.
+ * MessageWeave storage backend.
  *
  * @example
  * ```ts
- * import { createChatCore } from "messageweave";
+ * import { createMessageWeave } from "messageweave";
  *
- * const flow = createChatCore({ storage });
+ * const flow = createMessageWeave({ storage });
  * const room = await flow.createRoom({ creatorId: "u1" });
  * await flow.sendMessage({
  *   roomId: room.id,
@@ -69,23 +109,43 @@ export interface ChatCore {
  * const { events, nextToken } = await flow.getSyncStream({ sinceSequenceId: 0 });
  * ```
  */
-export function createChatCore(options: ChatCoreOptions): ChatCore {
+export function createMessageWeave(options: MessageWeaveOptions): MessageWeave {
 	const adapter = createFlowAdapter(options);
 	const sequencer = createSequencer(adapter);
 	const defaultLimit = options.defaultLimit ?? 100;
+	const pubsub = options.pubsub ?? createMemoryPubSub();
+	const listeners = new Set<EventListener>();
+
+	const emitEvent = async (event: FlowEvent, context: PublishContext) => {
+		for (const listener of listeners) {
+			await listener(event, context);
+		}
+	};
 
 	const { createRoom, getRoom, listRooms } = createRoomMethods(
 		adapter,
 		defaultLimit,
+		options.hooks,
 	);
 	const { publishEvent } = createPublishMethod(adapter, sequencer, {
 		maxContentBytes: options.maxContentBytes,
+		hooks: options.hooks,
+		pubsub,
+		emitEvent,
 	});
 	const { sendMessage, editMessage, deleteMessage } =
 		createMessageMethods(publishEvent);
 	const { getRoomState } = createStateMethods(adapter);
 	const { getRoomTimeline } = createTimelineMethods(adapter, defaultLimit);
 	const { getSyncStream } = createSyncMethods(adapter, defaultLimit);
+	const subscribe = createSubscribeMethod(pubsub, getSyncStream);
+
+	function onEvent(listener: EventListener): () => void {
+		listeners.add(listener);
+		return () => {
+			listeners.delete(listener);
+		};
+	}
 
 	return {
 		options,
@@ -99,5 +159,10 @@ export function createChatCore(options: ChatCoreOptions): ChatCore {
 		getRoomState,
 		getRoomTimeline,
 		getSyncStream,
+		subscribe,
+		onEvent,
 	};
 }
+
+/** Backwards-compatible alias for {@link createMessageWeave}. */
+export const createChatCore = createMessageWeave;

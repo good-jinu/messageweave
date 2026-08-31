@@ -19,7 +19,7 @@ export type AttachmentKind = "image" | "video" | "audio" | "file";
 /**
  * Host-owned attachment metadata that can be embedded in event content.
  *
- * `id` is an opaque identifier. ChatCore stores and synchronizes the reference,
+ * `id` is an opaque identifier. MessageWeave stores and synchronizes the reference,
  * but deliberately does not upload, download, authorize, or delete the
  * underlying file. The host application resolves the identifier and owns the
  * complete attachment lifecycle.
@@ -44,7 +44,7 @@ export type AttachmentReference = JsonObject & {
 };
 
 /**
- * The atomic, immutable unit of state in ChatCore. Once written, a
+ * The atomic, immutable unit of state in MessageWeave. Once written, a
  * `FlowEvent` is never updated or deleted — the historical state of a room is
  * computed by replaying its events.
  */
@@ -94,7 +94,7 @@ export interface EventEdge {
 	parentEventId: string;
 }
 
-/** Input for {@link ChatCore.createRoom}. */
+/** Input for {@link MessageWeave.createRoom}. */
 export interface CreateRoomInput {
 	/** Identifier of the entity creating the room. */
 	creatorId: string;
@@ -102,12 +102,12 @@ export interface CreateRoomInput {
 	metadata?: JsonObject;
 }
 
-/** Options for {@link ChatCore.listRooms}. */
+/** Options for {@link MessageWeave.listRooms}. */
 export interface ListRoomsOptions {
 	/**
 	 * Maximum number of rooms to return.
 	 *
-	 * @default ChatCoreOptions.defaultLimit
+	 * @default MessageWeaveOptions.defaultLimit
 	 */
 	limit?: number;
 	/**
@@ -118,7 +118,7 @@ export interface ListRoomsOptions {
 	order?: "asc" | "desc";
 }
 
-/** Input for {@link ChatCore.publishEvent}. */
+/** Input for {@link MessageWeave.publishEvent}. */
 export interface PublishEventInput {
 	/** Room that receives the event. */
 	roomId: string;
@@ -138,7 +138,7 @@ export interface PublishEventInput {
 	parentEventIds?: string[];
 }
 
-/** Input for {@link ChatCore.sendMessage}. */
+/** Input for {@link MessageWeave.sendMessage}. */
 export interface SendMessageInput {
 	/** Room that receives the message. */
 	roomId: string;
@@ -150,7 +150,7 @@ export interface SendMessageInput {
 	parentEventIds?: string[];
 }
 
-/** Input for {@link ChatCore.editMessage}. */
+/** Input for {@link MessageWeave.editMessage}. */
 export interface EditMessageInput {
 	/** Room containing the message being edited. */
 	roomId: string;
@@ -164,7 +164,7 @@ export interface EditMessageInput {
 	content?: JsonObject;
 }
 
-/** Input for {@link ChatCore.deleteMessage}. */
+/** Input for {@link MessageWeave.deleteMessage}. */
 export interface DeleteMessageInput {
 	/** Room containing the message being deleted. */
 	roomId: string;
@@ -178,7 +178,7 @@ export interface DeleteMessageInput {
 	content?: JsonObject;
 }
 
-/** Result of {@link ChatCore.publishEvent}. */
+/** Result of {@link MessageWeave.publishEvent}. */
 export interface PublishEventResult {
 	/** Persisted event. */
 	event: FlowEvent;
@@ -186,7 +186,7 @@ export interface PublishEventResult {
 	sequenceId: number;
 }
 
-/** Options for {@link ChatCore.getRoomTimeline}. */
+/** Options for {@link MessageWeave.getRoomTimeline}. */
 export interface GetTimelineOptions {
 	/** Maximum number of events to return. */
 	limit?: number;
@@ -194,7 +194,7 @@ export interface GetTimelineOptions {
 	beforeSequenceId?: number;
 }
 
-/** Options for {@link ChatCore.getSyncStream}. */
+/** Options for {@link MessageWeave.getSyncStream}. */
 export interface GetSyncStreamOptions {
 	/** Return only events with `sequenceId` strictly greater than this token. */
 	sinceSequenceId?: number;
@@ -208,7 +208,7 @@ export interface GetSyncStreamOptions {
 	 * - `[]` → returns no events.
 	 * - `[...]` → returned events are filtered with `roomId IN (...)`.
 	 *
-	 * For scoped streams, ChatCore also reads a global page boundary to advance
+	 * For scoped streams, MessageWeave also reads a global page boundary to advance
 	 * `nextToken` across out-of-scope sequence gaps. This means out-of-scope
 	 * events are not returned, but their sequence positions can affect the resume
 	 * token.
@@ -220,7 +220,7 @@ export interface GetSyncStreamOptions {
 	roomIds?: string[];
 }
 
-/** Result of {@link ChatCore.getSyncStream}. */
+/** Result of {@link MessageWeave.getSyncStream}. */
 export interface SyncStreamResult {
 	/** Events after the requested cursor, ordered oldest first. */
 	events: FlowEvent[];
@@ -281,4 +281,121 @@ export interface ProjectTimelineOptions {
 	 * @default true
 	 */
 	includeDeleted?: boolean;
+}
+
+/** Context metadata passed to publish lifecycle hooks. */
+export interface PublishContext {
+	/** The input supplied to publish the event. */
+	readonly input: PublishEventInput;
+}
+
+/** Listener function for event notifications and dynamic subscriptions. */
+export type EventListener = (
+	event: FlowEvent,
+	context: PublishContext,
+) => void | Promise<void>;
+
+/**
+ * Lifecycle hooks for intercepting and reacting to MessageWeave engine actions.
+ */
+export interface MessageWeaveHooks {
+	/**
+	 * Invoked before an event is sequenced and written to storage.
+	 * Can be used for custom authorization, rate limiting, or payload validation.
+	 * Throwing an error cancels the publish before consuming a sequence ID.
+	 */
+	beforePublish?: (input: PublishEventInput) => void | Promise<void>;
+
+	/**
+	 * Invoked immediately after an event has been persisted, edges linked,
+	 * and room state updated.
+	 * Runs outside the sequencer lock to keep sequence allocation high-throughput.
+	 */
+	onPublish?: (
+		event: FlowEvent,
+		context: PublishContext,
+	) => void | Promise<void>;
+
+	/**
+	 * Invoked after a new room is successfully created and persisted.
+	 */
+	onRoomCreated?: (room: Room, input: CreateRoomInput) => void | Promise<void>;
+}
+
+/** Backwards-compatible alias for {@link MessageWeaveHooks}. */
+export type ChatCoreHooks = MessageWeaveHooks;
+
+/**
+ * Pluggable pub/sub adapter interface for real-time multi-node event distribution.
+ * Enables scaling MessageWeave across multiple server instances (e.g. via Redis,
+ * PostgreSQL LISTEN/NOTIFY, NATS, etc.) without coupling to any specific transport.
+ */
+export interface PubSubAdapter {
+	/**
+	 * Publish an event payload to a topic/channel.
+	 *
+	 * @param channel The topic name (e.g. `events` or `room:<roomId>`)
+	 * @param event The published FlowEvent
+	 */
+	publish(channel: string, event: FlowEvent): Promise<void> | void;
+
+	/**
+	 * Subscribe to event notifications on a topic/channel.
+	 * Returns an unsubscribe callback or a promise resolving to an unsubscribe callback.
+	 *
+	 * @param channel The topic name to listen on
+	 * @param onEvent Callback invoked when an event is received on the topic
+	 */
+	subscribe(
+		channel: string,
+		onEvent: (event: FlowEvent) => void | Promise<void>,
+	): Promise<() => void | Promise<void>> | (() => void | Promise<void>);
+}
+
+/** Options for subscribing to real-time events via {@link MessageWeave.subscribe}. */
+export interface SubscribeOptions {
+	/**
+	 * Optional room filter. When specified, only events belonging to this room
+	 * will be yielded by the subscription.
+	 */
+	roomId?: string;
+
+	/**
+	 * Sequence ID cursor to catch up or replay from.
+	 *
+	 * When provided, all stored events with `sequenceId > sinceSequenceId` are streamed
+	 * first, followed seamlessly by incoming real-time events without gaps or duplicates.
+	 */
+	sinceSequenceId?: number;
+
+	/**
+	 * Optional event type filter list (e.g. `["message.text", "room.state.*"]`).
+	 * Supports exact type strings or wildcard prefixes ending with `*`.
+	 */
+	types?: string[];
+
+	/**
+	 * Optional `AbortSignal` to cancel and terminate the subscription.
+	 */
+	signal?: AbortSignal;
+
+	/**
+	 * Maximum number of queued unconsumed events before dropping or handling backpressure.
+	 *
+	 * @default 1000
+	 */
+	bufferSize?: number;
+}
+
+/**
+ * Asynchronous iterable stream of {@link FlowEvent} items returned by {@link MessageWeave.subscribe}.
+ *
+ * Supports standard `for await...of` loops, early termination via `break` or `return()`,
+ * and cancellation via `AbortSignal`.
+ */
+export interface EventStream extends AsyncIterable<FlowEvent> {
+	/**
+	 * Explicitly close and terminate the subscription stream, releasing pub/sub listeners and resources.
+	 */
+	return(): Promise<IteratorResult<FlowEvent>>;
 }

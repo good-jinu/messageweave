@@ -3,7 +3,7 @@ import { projectTimeline } from "./index";
 import type { TestInstance } from "./test-utils";
 import { getTestInstance } from "./test-utils";
 import type { AttachmentReference } from "./types";
-import { ChatCoreError } from "./utils/validate";
+import { ChatCoreError, MessageWeaveError } from "./utils/validate";
 
 // Helper: publish N events to a room
 async function publishN(flow: TestInstance["flow"], roomId: string, n: number) {
@@ -85,7 +85,7 @@ describe("rooms", () => {
 		await expect(
 			// @ts-expect-error testing invalid input
 			t.flow.createRoom({}),
-		).rejects.toBeInstanceOf(ChatCoreError);
+		).rejects.toBeInstanceOf(MessageWeaveError);
 	});
 
 	it("rejects metadata that is not JSON-serializable", async () => {
@@ -95,7 +95,11 @@ describe("rooms", () => {
 				// @ts-expect-error testing invalid input
 				metadata: { createdAt: new Date() },
 			}),
-		).rejects.toBeInstanceOf(ChatCoreError);
+		).rejects.toBeInstanceOf(MessageWeaveError);
+	});
+
+	it("supports ChatCoreError as backward-compatible alias", () => {
+		expect(ChatCoreError).toBe(MessageWeaveError);
 	});
 });
 
@@ -165,7 +169,7 @@ describe("publishEvent", () => {
 				senderId: "u1",
 				type: "message.text",
 			}),
-		).rejects.toBeInstanceOf(ChatCoreError);
+		).rejects.toBeInstanceOf(MessageWeaveError);
 	});
 
 	it("rejects content that is not JSON-serializable", async () => {
@@ -178,7 +182,7 @@ describe("publishEvent", () => {
 				// @ts-expect-error testing invalid input
 				content: { sentAt: new Date() },
 			}),
-		).rejects.toBeInstanceOf(ChatCoreError);
+		).rejects.toBeInstanceOf(MessageWeaveError);
 	});
 });
 
@@ -227,7 +231,7 @@ describe("sendMessage", () => {
 				senderId: "u1",
 				body: "   ",
 			}),
-		).rejects.toBeInstanceOf(ChatCoreError);
+		).rejects.toBeInstanceOf(MessageWeaveError);
 	});
 });
 
@@ -275,7 +279,7 @@ describe("editMessage", () => {
 				messageId: original.event.id,
 				body: "   ",
 			}),
-		).rejects.toBeInstanceOf(ChatCoreError);
+		).rejects.toBeInstanceOf(MessageWeaveError);
 	});
 
 	it("rejects editing a non-existent message ID", async () => {
@@ -287,7 +291,7 @@ describe("editMessage", () => {
 				messageId: "nonexistent-id",
 				body: "new body",
 			}),
-		).rejects.toBeInstanceOf(ChatCoreError);
+		).rejects.toBeInstanceOf(MessageWeaveError);
 	});
 
 	it("rejects editing a message from a different room", async () => {
@@ -306,7 +310,7 @@ describe("editMessage", () => {
 				messageId: original.event.id,
 				body: "new body in room2",
 			}),
-		).rejects.toBeInstanceOf(ChatCoreError);
+		).rejects.toBeInstanceOf(MessageWeaveError);
 	});
 });
 
@@ -347,7 +351,7 @@ describe("deleteMessage", () => {
 				senderId: "u1",
 				messageId: "nonexistent-id",
 			}),
-		).rejects.toBeInstanceOf(ChatCoreError);
+		).rejects.toBeInstanceOf(MessageWeaveError);
 	});
 });
 
@@ -775,7 +779,7 @@ describe("publishEvent — integrity (§3.2)", () => {
 				senderId: "u1",
 				type: "msg",
 			}),
-		).rejects.toBeInstanceOf(ChatCoreError);
+		).rejects.toBeInstanceOf(MessageWeaveError);
 		expect(t.db.event).toHaveLength(0);
 		expect(t.db.sequence).toHaveLength(0);
 	});
@@ -789,7 +793,7 @@ describe("publishEvent — integrity (§3.2)", () => {
 				type: "msg",
 				parentEventIds: ["does-not-exist"],
 			}),
-		).rejects.toBeInstanceOf(ChatCoreError);
+		).rejects.toBeInstanceOf(MessageWeaveError);
 		expect(t.db.event).toHaveLength(0);
 		expect(t.db.sequence).toHaveLength(0);
 	});
@@ -837,7 +841,7 @@ describe("publishEvent — integrity (§3.2)", () => {
 				type: "msg",
 				parentEventIds: [event.id],
 			}),
-		).rejects.toBeInstanceOf(ChatCoreError);
+		).rejects.toBeInstanceOf(MessageWeaveError);
 		// Only the first event should exist; no extra event or sequence consumed
 		expect(t.db.event).toHaveLength(1);
 	});
@@ -854,7 +858,7 @@ describe("publishEvent — content size ceiling (§3.3)", () => {
 				type: "msg",
 				content: { body: "this is definitely more than 10 bytes" },
 			}),
-		).rejects.toBeInstanceOf(ChatCoreError);
+		).rejects.toBeInstanceOf(MessageWeaveError);
 	});
 
 	it("allows content within the byte limit", async () => {
@@ -922,7 +926,7 @@ describe("sendMessage — input validation", () => {
 		await expect(
 			// @ts-expect-error testing invalid input
 			t.flow.sendMessage({ senderId: "u1", body: "hi" }),
-		).rejects.toBeInstanceOf(ChatCoreError);
+		).rejects.toBeInstanceOf(MessageWeaveError);
 	});
 
 	it("rejects a missing senderId", async () => {
@@ -930,7 +934,7 @@ describe("sendMessage — input validation", () => {
 		await expect(
 			// @ts-expect-error testing invalid input
 			t.flow.sendMessage({ roomId: room.id, body: "hi" }),
-		).rejects.toBeInstanceOf(ChatCoreError);
+		).rejects.toBeInstanceOf(MessageWeaveError);
 	});
 
 	it("rejects a missing body field", async () => {
@@ -938,7 +942,7 @@ describe("sendMessage — input validation", () => {
 		await expect(
 			// @ts-expect-error testing invalid input
 			t.flow.sendMessage({ roomId: room.id, senderId: "u1" }),
-		).rejects.toBeInstanceOf(ChatCoreError);
+		).rejects.toBeInstanceOf(MessageWeaveError);
 	});
 });
 
@@ -947,21 +951,21 @@ describe("editMessage — input validation", () => {
 		await expect(
 			// @ts-expect-error testing invalid input
 			t.flow.editMessage({ senderId: "u1", messageId: "e1", body: "x" }),
-		).rejects.toBeInstanceOf(ChatCoreError);
+		).rejects.toBeInstanceOf(MessageWeaveError);
 	});
 
 	it("rejects a missing senderId", async () => {
 		await expect(
 			// @ts-expect-error testing invalid input
 			t.flow.editMessage({ roomId: "r1", messageId: "e1", body: "x" }),
-		).rejects.toBeInstanceOf(ChatCoreError);
+		).rejects.toBeInstanceOf(MessageWeaveError);
 	});
 
 	it("rejects a missing messageId", async () => {
 		await expect(
 			// @ts-expect-error testing invalid input
 			t.flow.editMessage({ roomId: "r1", senderId: "u1", body: "x" }),
-		).rejects.toBeInstanceOf(ChatCoreError);
+		).rejects.toBeInstanceOf(MessageWeaveError);
 	});
 
 	it("rejects an empty messageId", async () => {
@@ -972,7 +976,7 @@ describe("editMessage — input validation", () => {
 				messageId: "",
 				body: "x",
 			}),
-		).rejects.toBeInstanceOf(ChatCoreError);
+		).rejects.toBeInstanceOf(MessageWeaveError);
 	});
 });
 
@@ -981,27 +985,27 @@ describe("deleteMessage — input validation", () => {
 		await expect(
 			// @ts-expect-error testing invalid input
 			t.flow.deleteMessage({ senderId: "u1", messageId: "e1" }),
-		).rejects.toBeInstanceOf(ChatCoreError);
+		).rejects.toBeInstanceOf(MessageWeaveError);
 	});
 
 	it("rejects a missing senderId", async () => {
 		await expect(
 			// @ts-expect-error testing invalid input
 			t.flow.deleteMessage({ roomId: "r1", messageId: "e1" }),
-		).rejects.toBeInstanceOf(ChatCoreError);
+		).rejects.toBeInstanceOf(MessageWeaveError);
 	});
 
 	it("rejects a missing messageId", async () => {
 		await expect(
 			// @ts-expect-error testing invalid input
 			t.flow.deleteMessage({ roomId: "r1", senderId: "u1" }),
-		).rejects.toBeInstanceOf(ChatCoreError);
+		).rejects.toBeInstanceOf(MessageWeaveError);
 	});
 
 	it("rejects an empty messageId", async () => {
 		await expect(
 			t.flow.deleteMessage({ roomId: "r1", senderId: "u1", messageId: "" }),
-		).rejects.toBeInstanceOf(ChatCoreError);
+		).rejects.toBeInstanceOf(MessageWeaveError);
 	});
 
 	it("publishes a tombstone without a reason when reason is omitted", async () => {
@@ -1030,7 +1034,7 @@ describe("publishEvent — additional input validation", () => {
 		await expect(
 			// @ts-expect-error testing invalid input
 			t.flow.publishEvent({ roomId: room.id, type: "msg" }),
-		).rejects.toBeInstanceOf(ChatCoreError);
+		).rejects.toBeInstanceOf(MessageWeaveError);
 	});
 
 	it("rejects a missing type", async () => {
@@ -1038,14 +1042,14 @@ describe("publishEvent — additional input validation", () => {
 		await expect(
 			// @ts-expect-error testing invalid input
 			t.flow.publishEvent({ roomId: room.id, senderId: "u1" }),
-		).rejects.toBeInstanceOf(ChatCoreError);
+		).rejects.toBeInstanceOf(MessageWeaveError);
 	});
 
 	it("rejects an empty type string", async () => {
 		const room = await t.flow.createRoom({ creatorId: "u1" });
 		await expect(
 			t.flow.publishEvent({ roomId: room.id, senderId: "u1", type: "" }),
-		).rejects.toBeInstanceOf(ChatCoreError);
+		).rejects.toBeInstanceOf(MessageWeaveError);
 	});
 });
 
@@ -1118,5 +1122,157 @@ describe("flow.options", () => {
 
 	it("exposes the storage backend on options", () => {
 		expect(t.flow.options.storage).toBeDefined();
+	});
+});
+
+describe("lifecycle hooks", () => {
+	it("executes hooks.beforePublish and aborts publish without burning a sequence id if it throws", async () => {
+		let beforePublishCalled = false;
+		const { flow, db } = getTestInstance({
+			hooks: {
+				beforePublish: async (input) => {
+					beforePublishCalled = true;
+					if (input.content?.forbidden === true) {
+						throw new Error("moderation rejected");
+					}
+				},
+			},
+		});
+
+		const room = await flow.createRoom({ creatorId: "u1" });
+
+		// Rejected publish
+		await expect(
+			flow.publishEvent({
+				roomId: room.id,
+				senderId: "u1",
+				type: "msg",
+				content: { forbidden: true },
+			}),
+		).rejects.toThrow("moderation rejected");
+
+		expect(beforePublishCalled).toBe(true);
+		expect(db.event).toHaveLength(0);
+		expect(db.sequence).toHaveLength(0);
+
+		// Allowed publish succeeds with sequenceId 1
+		const result = await flow.publishEvent({
+			roomId: room.id,
+			senderId: "u1",
+			type: "msg",
+			content: { forbidden: false, text: "allowed" },
+		});
+		expect(result.sequenceId).toBe(1);
+		expect(db.event).toHaveLength(1);
+	});
+
+	it("executes hooks.onPublish after successful persistence with the assigned sequence id", async () => {
+		const publishedEvents: Array<{ id: string; seq: number; body?: unknown }> =
+			[];
+		const { flow } = getTestInstance({
+			hooks: {
+				onPublish: async (event, context) => {
+					publishedEvents.push({
+						id: event.id,
+						seq: event.sequenceId,
+						body: context.input.content?.body,
+					});
+				},
+			},
+		});
+
+		const room = await flow.createRoom({ creatorId: "u1" });
+		const p1 = await flow.publishEvent({
+			roomId: room.id,
+			senderId: "u1",
+			type: "msg",
+			content: { body: "first" },
+		});
+		const p2 = await flow.sendMessage({
+			roomId: room.id,
+			senderId: "u2",
+			body: "second",
+		});
+
+		expect(publishedEvents).toHaveLength(2);
+		expect(publishedEvents[0]).toEqual({
+			id: p1.event.id,
+			seq: 1,
+			body: "first",
+		});
+		expect(publishedEvents[1]).toEqual({
+			id: p2.event.id,
+			seq: 2,
+			body: "second",
+		});
+	});
+
+	it("executes hooks.onRoomCreated after room is created", async () => {
+		let createdRoomId: string | null = null;
+		let receivedName: unknown = null;
+
+		const { flow } = getTestInstance({
+			hooks: {
+				onRoomCreated: async (room, input) => {
+					createdRoomId = room.id;
+					receivedName = input.metadata?.name;
+				},
+			},
+		});
+
+		const room = await flow.createRoom({
+			creatorId: "u1",
+			metadata: { name: "Announcements" },
+		});
+
+		expect(createdRoomId).toBe(room.id);
+		expect(receivedName).toBe("Announcements");
+	});
+});
+
+describe("dynamic event subscriptions (flow.onEvent)", () => {
+	it("receives published events and supports unsubscribe", async () => {
+		const eventsA: string[] = [];
+		const eventsB: string[] = [];
+
+		const unsubscribeA = t.flow.onEvent((event) => {
+			eventsA.push(event.id);
+		});
+		const unsubscribeB = t.flow.onEvent((event) => {
+			eventsB.push(event.id);
+		});
+
+		const room = await t.flow.createRoom({ creatorId: "u1" });
+		const m1 = await t.flow.sendMessage({
+			roomId: room.id,
+			senderId: "u1",
+			body: "hello",
+		});
+
+		expect(eventsA).toEqual([m1.event.id]);
+		expect(eventsB).toEqual([m1.event.id]);
+
+		// Unsubscribe A
+		unsubscribeA();
+
+		const m2 = await t.flow.sendMessage({
+			roomId: room.id,
+			senderId: "u1",
+			body: "world",
+		});
+
+		expect(eventsA).toEqual([m1.event.id]);
+		expect(eventsB).toEqual([m1.event.id, m2.event.id]);
+
+		// Unsubscribe B
+		unsubscribeB();
+
+		await t.flow.sendMessage({
+			roomId: room.id,
+			senderId: "u1",
+			body: "ignored",
+		});
+
+		expect(eventsB).toEqual([m1.event.id, m2.event.id]);
 	});
 });

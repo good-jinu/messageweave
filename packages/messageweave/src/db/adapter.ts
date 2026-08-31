@@ -1,9 +1,9 @@
-import type { ChatCoreOptions } from "../options";
-import type { ChatCoreStorage } from "../storage";
+import type { MessageWeaveOptions } from "../options";
+import type { MessageWeaveStorage } from "../storage";
 
-export type FlowAdapter = ChatCoreStorage;
+export type FlowAdapter = MessageWeaveStorage;
 
-/** Build the ChatCore storage adapter from user options. */
-export function createFlowAdapter(options: ChatCoreOptions): FlowAdapter {
+/** Build the MessageWeave storage adapter from user options. */
+export function createFlowAdapter(options: MessageWeaveOptions): FlowAdapter {
 	return options.storage;
 }

@@ -1,23 +1,43 @@
 import type { FlowAdapter } from "../db/adapter";
 import { toEvent } from "../db/rows";
 import type { Sequencer } from "../db/sequence";
-import type { PublishEventInput, PublishEventResult } from "../types";
+import type {
+	FlowEvent,
+	MessageWeaveHooks,
+	PublishContext,
+	PublishEventInput,
+	PublishEventResult,
+	PubSubAdapter,
+} from "../types";
 import { nowEpochMilliseconds } from "../utils/time";
-import { ChatCoreError, parsePublishEventInput } from "../utils/validate";
+import { MessageWeaveError, parsePublishEventInput } from "../utils/validate";
 import { upsertRoomState } from "./state";
+
+/** Options for {@link createPublishMethod}. */
+export interface CreatePublishMethodOptions {
+	maxContentBytes?: number;
+	hooks?: MessageWeaveHooks;
+	pubsub?: PubSubAdapter;
+	emitEvent?: (
+		event: FlowEvent,
+		context: PublishContext,
+	) => void | Promise<void>;
+}
 
 /** The event publishing pipeline. */
 export function createPublishMethod(
 	adapter: FlowAdapter,
 	sequencer: Sequencer,
-	options: { maxContentBytes?: number } = {},
+	options: CreatePublishMethodOptions = {},
 ) {
 	/**
 	 * Publish an immutable event to a room's timeline.
 	 *
-	 * Integrity checks (room existence, parent event validity, content size)
-	 * run **before** entering the sequencer so a rejection never burns a
-	 * sequence id. The sequencer-serialized section only writes.
+	 * Integrity checks (room existence, parent event validity, content size,
+	 * beforePublish hook) run **before** entering the sequencer so a rejection
+	 * never burns a sequence id. The sequencer-serialized section only writes.
+	 * Post-publish hooks (`onPublish` and dynamic listeners) run **after** the
+	 * sequencer releases its lock.
 	 */
 	async function publishEvent(
 		input: PublishEventInput,
@@ -31,7 +51,7 @@ export function createPublishMethod(
 				JSON.stringify(data.content ?? {}),
 			).byteLength;
 			if (bytes > options.maxContentBytes) {
-				throw new ChatCoreError(
+				throw new MessageWeaveError(
 					`content size ${bytes} bytes exceeds maxContentBytes (${options.maxContentBytes})`,
 				);
 			}
@@ -43,7 +63,7 @@ export function createPublishMethod(
 			where: [{ field: "id", value: data.roomId }],
 		});
 		if (!roomRow) {
-			throw new ChatCoreError(`room not found: ${data.roomId}`);
+			throw new MessageWeaveError(`room not found: ${data.roomId}`);
 		}
 
 		// Each parent must exist and belong to the same room.
@@ -61,17 +81,22 @@ export function createPublishMethod(
 			for (const parentId of data.parentEventIds) {
 				const parentRow = parentMap.get(String(parentId));
 				if (!parentRow) {
-					throw new ChatCoreError(`parent event not found: ${parentId}`);
+					throw new MessageWeaveError(`parent event not found: ${parentId}`);
 				}
 				if (String(parentRow.roomId) !== data.roomId) {
-					throw new ChatCoreError(
+					throw new MessageWeaveError(
 						`parent event ${parentId} belongs to a different room`,
 					);
 				}
 			}
 		}
 
-		return sequencer.withNextSequence(async (sequenceId) => {
+		// Pre-publish hook (runs before sequencer lock)
+		if (options.hooks?.beforePublish) {
+			await options.hooks.beforePublish(input);
+		}
+
+		const result = await sequencer.withNextSequence(async (sequenceId) => {
 			const row = await adapter.create({
 				model: "event",
 				data: {
@@ -106,6 +131,30 @@ export function createPublishMethod(
 
 			return { event, sequenceId };
 		});
+
+		// Post-publish notifications (executed after releasing sequencer lock)
+		const context: PublishContext = { input };
+		if (options.hooks?.onPublish) {
+			await options.hooks.onPublish(result.event, context);
+		}
+		if (options.emitEvent) {
+			await options.emitEvent(result.event, context);
+		}
+		if (options.pubsub) {
+			try {
+				const p1 = options.pubsub.publish("events", result.event);
+				if (p1 instanceof Promise) p1.catch(() => {});
+				const p2 = options.pubsub.publish(
+					`room:${result.event.roomId}`,
+					result.event,
+				);
+				if (p2 instanceof Promise) p2.catch(() => {});
+			} catch {
+				// Ignore synchronous pubsub errors
+			}
+		}
+
+		return result;
 	}
 
 	return { publishEvent };

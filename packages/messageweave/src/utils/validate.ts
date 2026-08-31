@@ -2,36 +2,45 @@ import * as z from "zod";
 import type { JsonObject, JsonValue } from "../types";
 
 /** Thrown when an SDK method receives invalid input. */
-export interface ChatCoreError extends Error {
+export interface MessageWeaveError extends Error {
 	/** Stable error name for runtime narrowing. */
-	name: "ChatCoreError";
+	name: "MessageWeaveError";
 }
 
-interface ChatCoreErrorConstructor {
-	new (message: string): ChatCoreError;
-	(message: string): ChatCoreError;
-	prototype: ChatCoreError;
+/** Backwards-compatible alias for {@link MessageWeaveError}. */
+export type ChatCoreError = MessageWeaveError;
+
+interface MessageWeaveErrorConstructor {
+	new (message: string): MessageWeaveError;
+	(message: string): MessageWeaveError;
+	prototype: MessageWeaveError;
 }
 
-function ChatCoreErrorImpl(
-	this: ChatCoreError | undefined,
+function MessageWeaveErrorImpl(
+	this: MessageWeaveError | undefined,
 	message: string,
-): ChatCoreError {
-	const error = new Error(message) as ChatCoreError;
-	error.name = "ChatCoreError";
-	Object.setPrototypeOf(error, ChatCoreErrorImpl.prototype);
+): MessageWeaveError {
+	const error = new Error(message) as MessageWeaveError;
+	error.name = "MessageWeaveError";
+	Object.setPrototypeOf(error, MessageWeaveErrorImpl.prototype);
 	return error;
 }
 
-ChatCoreErrorImpl.prototype = Object.create(Error.prototype) as ChatCoreError;
-Object.defineProperty(ChatCoreErrorImpl.prototype, "constructor", {
-	value: ChatCoreErrorImpl,
+MessageWeaveErrorImpl.prototype = Object.create(
+	Error.prototype,
+) as MessageWeaveError;
+Object.defineProperty(MessageWeaveErrorImpl.prototype, "constructor", {
+	value: MessageWeaveErrorImpl,
 	writable: true,
 	configurable: true,
 });
 
 /** Error constructor used for invalid MessageWeave inputs and operations. */
-export const ChatCoreError = ChatCoreErrorImpl as ChatCoreErrorConstructor;
+export const MessageWeaveError =
+	MessageWeaveErrorImpl as MessageWeaveErrorConstructor;
+
+/** Backwards-compatible alias for {@link MessageWeaveError}. */
+export const ChatCoreError = MessageWeaveError;
 
 const jsonValueSchema: z.ZodType<JsonValue> = z.lazy(() =>
 	z.union([

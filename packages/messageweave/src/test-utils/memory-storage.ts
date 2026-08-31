@@ -1,16 +1,16 @@
 import type {
-	ChatCoreStorage,
-	ChatCoreStorageRow,
-	ChatCoreStorageWhere,
+	MessageWeaveStorage,
+	MessageWeaveStorageRow,
+	MessageWeaveStorageWhere,
 } from "../storage";
 import { generateId } from "../utils/id";
 
 /** An in-memory table store keyed by model name. */
-export type MemoryDatabase = Record<string, ChatCoreStorageRow[]>;
+export type MemoryDatabase = Record<string, MessageWeaveStorageRow[]>;
 
 function matches(
 	recordValue: unknown,
-	{ value, operator = "eq" }: ChatCoreStorageWhere,
+	{ value, operator = "eq" }: MessageWeaveStorageWhere,
 ): boolean {
 	switch (operator) {
 		case "eq":
@@ -37,11 +37,11 @@ function matches(
 }
 
 /** Create an in-memory storage backend for tests and local development. */
-export function createMemoryStorage(db: MemoryDatabase): ChatCoreStorage {
+export function createMemoryStorage(db: MemoryDatabase): MessageWeaveStorage {
 	const filter = (
-		table: ChatCoreStorageRow[],
-		where?: ChatCoreStorageWhere[],
-	): ChatCoreStorageRow[] =>
+		table: MessageWeaveStorageRow[],
+		where?: MessageWeaveStorageWhere[],
+	): MessageWeaveStorageRow[] =>
 		!where || where.length === 0
 			? [...table]
 			: table.filter((record) =>

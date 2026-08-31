@@ -6,7 +6,7 @@ sidebar_position: 3
 
 # Real-time Sync
 
-ChatCore makes real-time synchronization trivial with a single, globally
+MessageWeave makes real-time synchronization trivial with a single, globally
 **monotonically increasing `sequenceId`**. Every published event — across every
 room — is assigned the next number in this global sequence.
 
@@ -29,17 +29,18 @@ cursor = nextToken;
 ```
 
 Poll `getSyncStream` on an interval, or trigger it from your own
-push/WebSocket layer — ChatCore is transport-agnostic, so *how* you deliver the
+push/WebSocket layer — MessageWeave is transport-agnostic, so *how* you deliver the
 stream to clients is up to you.
 
 ## How the sequence stays monotonic
 
-ChatCore's storage contract exposes no transaction primitive, so ChatCore
+MessageWeave's storage contract exposes no transaction primitive, so MessageWeave
 serializes `publishEvent` in-process to keep concurrent publishes from racing
 inside one engine instance. Integrity checks run before sequence assignment, but
 storage failures during a serialized write can still advance the stored counter.
 For multi-process publishers or stronger atomicity guarantees, use a storage
 implementation that provides atomic ordering.
+
 
 :::tip
 Persist the cursor per-client. On reconnect, replay from the stored

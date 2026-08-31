@@ -55,7 +55,7 @@ Every interaction in MessageWeave is an immutable `FlowEvent`. Chronological syn
 
 ## Choosing a database
 
-ChatCore persists through a storage backend passed as `options.storage`.
+MessageWeave persists through a storage backend passed as `options.storage`.
 MessageWeave provides optional entry points for Unadapter's supported database
 clients while keeping Unadapter itself out of application code.
 
@@ -63,10 +63,10 @@ For Drizzle, pass your database client and the same schema object used to create
 it:
 
 ```ts
-import { createChatCore } from "messageweave";
+import { createMessageWeave } from "messageweave";
 import { drizzleAdapter } from "messageweave/drizzle";
 
-const flow = createChatCore({
+const flow = createMessageWeave({
 	storage: drizzleAdapter(db, {
 		provider: "pg",
 		schema,
@@ -84,14 +84,14 @@ for setup examples. The generated
 [API reference](https://good-jinu.github.io/messageweave/api/) lists every
 currently exported adapter and option.
 
-You can still provide a custom `ChatCoreStorage` implementation when you need a
+You can still provide a custom `MessageWeaveStorage` implementation when you need a
 different database client or storage architecture.
 
-**Sequencing & atomicity.** ChatCore's current storage layer exposes no
+**Sequencing & atomicity.** MessageWeave's current storage layer exposes no
 cross-statement transaction primitive, so `publishEvent` is serialized
 in-process to keep `sequenceId` strictly increasing. Integrity checks run before
 sequence assignment, but storage failures during the serialized write can still
-advance the stored counter. For multi-process deployments, back ChatCore with a
+advance the stored counter. For multi-process deployments, back MessageWeave with a
 storage implementation that provides its own atomic ordering.
 
 **Testing.** For tests, use the included corrected in-memory helper:
@@ -104,7 +104,7 @@ const { flow, db } = getTestInstance();
 
 ## Media and attachments
 
-ChatCore stores and synchronizes attachment references, not file bytes. The host
+MessageWeave stores and synchronizes attachment references, not file bytes. The host
 application owns upload, storage, authorization, delivery, and deletion. After
 the host completes and verifies an upload, put its opaque attachment id and
 portable presentation metadata in event content:
@@ -133,7 +133,7 @@ await flow.publishEvent({
 });
 ```
 
-The attachment id is deliberately opaque to ChatCore. The host may resolve it
+The attachment id is deliberately opaque to MessageWeave. The host may resolve it
 to S3, GCS, R2, a CDN, local storage, or another media service. Do not store
 object-store keys, credentials, or permanent signed URLs in event content.
 
@@ -152,18 +152,18 @@ For SQL databases, the separate CLI package can generate starter DDL without
 adding CLI-only dependencies to the runtime `messageweave` package:
 
 ```bash
-pnpm dlx @messageweave/cli schema generate --dialect sqlite --out migrations/001_chatcore.sql
+pnpm dlx @messageweave/cli schema generate --dialect sqlite --out migrations/001_messageweave.sql
 ```
 
 | Adapter | What you do |
 | --- | --- |
-| **Kysely** | Create the five tables with your migration tool or host-app bootstrapping code, then implement `ChatCoreStorage` with normal Kysely queries. |
+| **Kysely** | Create the five tables with your migration tool or host-app bootstrapping code, then implement `MessageWeaveStorage` with normal Kysely queries. |
 | **Drizzle** | Define the tables in your Drizzle schema (below), then manage migrations with `drizzle-kit`. |
 | **Prisma** | Add the models below to `schema.prisma`, then run `prisma migrate` / `prisma db push`. |
 
 ### Logical column types
 
-`ChatCoreStorage` receives and returns logical JavaScript values. Your adapter
+`MessageWeaveStorage` receives and returns logical JavaScript values. Your adapter
 may store these as native JSON columns, serialized strings, `bigint`, or other
 database-specific types, but it should map them back to the values shown here:
 
@@ -175,7 +175,7 @@ database-specific types, but it should map them back to the values shown here:
 ### Prisma
 
 Model names are PascalCase so Prisma's lowercased client accessors
-(`prisma.room`, `prisma.eventEdge`, …) match the names ChatCore queries. The
+(`prisma.room`, `prisma.eventEdge`, …) match the names MessageWeave queries. The
 back-relations are required for Prisma to validate the `onDelete: Cascade`
 foreign keys.
 
@@ -231,7 +231,8 @@ model Sequence {
 }
 ```
 
-The storage implementation creates row `id`s when ChatCore calls `create`, so
+The storage implementation creates row `id`s when MessageWeave calls `create`, so
+
 the columns intentionally have no database default in this example.
 
 ### Drizzle (Postgres)

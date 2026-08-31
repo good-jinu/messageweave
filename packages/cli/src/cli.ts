@@ -2,7 +2,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { parseCliArgs } from "./args";
-import { generateChatCoreSchema } from "./generate";
+import { generateMessageWeaveSchema } from "./generate";
 import { VERSION } from "./version";
 
 const USAGE = `Usage:
@@ -37,7 +37,7 @@ async function main(argv: string[]): Promise<void> {
 		return;
 	}
 
-	const schema = await generateChatCoreSchema(parsed.command.options);
+	const schema = await generateMessageWeaveSchema(parsed.command.options);
 	if (parsed.command.options.out === undefined) {
 		process.stdout.write(ensureTrailingNewline(schema));
 		return;
@@ -46,7 +46,7 @@ async function main(argv: string[]): Promise<void> {
 	const outPath = resolve(parsed.command.options.out);
 	await mkdir(dirname(outPath), { recursive: true });
 	await writeFile(outPath, ensureTrailingNewline(schema), "utf8");
-	process.stdout.write(`Generated ChatCore schema: ${outPath}\n`);
+	process.stdout.write(`Generated MessageWeave schema: ${outPath}\n`);
 }
 
 function ensureTrailingNewline(value: string): string {

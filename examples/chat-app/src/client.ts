@@ -67,12 +67,12 @@ const state = {
 	eventsByRoom: new Map<string, SerializedEvent[]>(),
 	membersByRoom: new Map<string, Member[]>(),
 	seenEventIds: new Set<string>(),
-	userId: localStorage.getItem("chatcore:userId") ?? crypto.randomUUID(),
-	displayName: localStorage.getItem("chatcore:displayName") ?? "",
+	userId: localStorage.getItem("messageweave:userId") ?? crypto.randomUUID(),
+	displayName: localStorage.getItem("messageweave:displayName") ?? "",
 	editingMessageId: null as string | null,
 };
 
-localStorage.setItem("chatcore:userId", state.userId);
+localStorage.setItem("messageweave:userId", state.userId);
 
 function requireElement<T extends HTMLElement>(selector: string): T {
 	const element = document.querySelector<T>(selector);
@@ -111,7 +111,7 @@ function currentDisplayName(): string {
 
 function rememberDisplayName(): void {
 	state.displayName = currentDisplayName();
-	localStorage.setItem("chatcore:displayName", state.displayName);
+	localStorage.setItem("messageweave:displayName", state.displayName);
 }
 
 async function api<K extends keyof ApiResponseMap>(
@@ -398,7 +398,7 @@ function renderMessages(): void {
 function renderActiveRoom(): void {
 	const room = activeRoom();
 	elements.roomTitle.textContent = room?.name ?? "No room selected";
-	elements.roomTopic.textContent = room?.topic || "ChatCore event stream";
+	elements.roomTopic.textContent = room?.topic || "MessageWeave event stream";
 	elements.joinButton.disabled = room === null;
 	elements.messageBody.disabled = room === null;
 	const submitButton =

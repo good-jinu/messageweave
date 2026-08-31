@@ -6,7 +6,7 @@ sidebar_position: 3
 
 # Database Adapters
 
-MessageWeave's engine accepts the stable `ChatCoreStorage` interface. Built-in
+MessageWeave's engine accepts the stable `MessageWeaveStorage` interface. Built-in
 entry points adapt common database clients to that interface while keeping
 Unadapter as an internal MessageWeave implementation detail.
 
@@ -18,10 +18,10 @@ install or import `unadapter` directly.
 Pass the Drizzle client and the schema object containing MessageWeave's tables:
 
 ```ts
-import { createChatCore } from "messageweave";
+import { createMessageWeave } from "messageweave";
 import { drizzleAdapter } from "messageweave/drizzle";
 
-const flow = createChatCore({
+const flow = createMessageWeave({
   storage: drizzleAdapter(db, {
     provider: "pg",
     schema,
@@ -36,10 +36,10 @@ Valid providers are `pg`, `mysql`, and `sqlite`.
 Pass the generated Prisma client and its database provider:
 
 ```ts
-import { createChatCore } from "messageweave";
+import { createMessageWeave } from "messageweave";
 import { prismaAdapter } from "messageweave/prisma";
 
-const flow = createChatCore({
+const flow = createMessageWeave({
   storage: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
@@ -52,10 +52,10 @@ the Prisma client after changing them.
 ## Kysely and Knex
 
 ```ts
-import { createChatCore } from "messageweave";
+import { createMessageWeave } from "messageweave";
 import { kyselyAdapter } from "messageweave/kysely";
 
-const flow = createChatCore({
+const flow = createMessageWeave({
   storage: kyselyAdapter(db, { type: "postgres" }),
 });
 ```
@@ -66,10 +66,10 @@ Knex, and Sumak integrations accept `postgres`, `mysql`, `sqlite`, or `mssql`.
 ## MongoDB
 
 ```ts
-import { createChatCore } from "messageweave";
+import { createMessageWeave } from "messageweave";
 import { mongodbAdapter } from "messageweave/mongodb";
 
-const flow = createChatCore({
+const flow = createMessageWeave({
   storage: mongodbAdapter(db),
 });
 ```
@@ -121,13 +121,14 @@ ORM schema.
 ## Custom storage
 
 Database clients without a built-in entry point can implement
-`ChatCoreStorage` directly:
+`MessageWeaveStorage` directly:
 
 ```ts
-import { createChatCore, type ChatCoreStorage } from "messageweave";
+import { createMessageWeave, type MessageWeaveStorage } from "messageweave";
 
-const storage: ChatCoreStorage = createCustomStorage();
-const flow = createChatCore({ storage });
+const storage: MessageWeaveStorage = createCustomStorage();
+const flow = createMessageWeave({ storage });
 ```
 
 This keeps the engine independent of any particular database library.
+
