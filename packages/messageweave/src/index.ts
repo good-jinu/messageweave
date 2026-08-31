@@ -1,10 +1,4 @@
 export {
-	createMessageWeave,
-	createMessageWeave as createChatCore,
-	type MessageWeave,
-	type MessageWeave as ChatCore,
-} from "./chatcore";
-export {
 	type GenerateDrizzleSchemaOptions,
 	type GenerateMessageWeaveDrizzleSchemaOptions,
 	type GenerateMessageWeavePrismaSchemaOptions,
@@ -17,6 +11,12 @@ export {
 	type MessageWeavePrismaProvider,
 	type MessageWeaveSchemaIdStrategy,
 } from "./generate";
+export {
+	createMessageWeave,
+	createMessageWeave as createChatCore,
+	type MessageWeave,
+	type MessageWeave as ChatCore,
+} from "./messageweave";
 export type {
 	MessageWeaveOptions,
 	MessageWeaveOptions as ChatCoreOptions,

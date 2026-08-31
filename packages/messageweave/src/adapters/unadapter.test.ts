@@ -1,6 +1,7 @@
 import { memoryAdapter } from "unadapter/memory";
 import { describe, expect, it } from "vitest";
-import { createMessageWeave } from "../chatcore";
+import { createMessageWeave } from "../messageweave";
+
 import { createUnadapterStorage } from "./unadapter";
 
 describe("createUnadapterStorage", () => {

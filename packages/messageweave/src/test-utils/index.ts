@@ -1,5 +1,6 @@
-import type { MessageWeave } from "../chatcore";
-import { createMessageWeave } from "../chatcore";
+import type { MessageWeave } from "../messageweave";
+import { createMessageWeave } from "../messageweave";
+
 import type { MessageWeaveOptions } from "../options";
 import type { MemoryDatabase } from "./memory-storage";
 import { createMemoryStorage } from "./memory-storage";
