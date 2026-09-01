@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { projectTimeline } from "./index";
+import { createMessageWeave, projectTimeline } from "./index";
 import type { TestInstance } from "./test-utils";
 import { getTestInstance } from "./test-utils";
+import { createMemoryStorage } from "./test-utils/memory-storage";
 import type { AttachmentReference } from "./types";
 import { ChatCoreError, MessageWeaveError } from "./utils/validate";
 
@@ -134,6 +135,45 @@ describe("publishEvent", () => {
 			),
 		);
 		const seqs = published.map((p) => p.sequenceId).sort((a, b) => a - b);
+		expect(seqs).toEqual(Array.from({ length: 25 }, (_, i) => i + 1));
+		expect(new Set(seqs).size).toBe(25);
+	});
+
+	it("maintains unique monotonic sequence IDs across multiple distinct engine instances sharing storage", async () => {
+		const sharedDb = {
+			room: [],
+			event: [],
+			eventEdge: [],
+			roomState: [],
+			sequence: [],
+		};
+
+		// Create 5 distinct MessageWeave instances simulating separate Node processes / serverless workers
+		const instances = Array.from({ length: 5 }, () =>
+			createMessageWeave({
+				storage: createMemoryStorage(sharedDb),
+			}),
+		);
+
+		const room = await instances[0]!.createRoom({ creatorId: "u1" });
+
+		// Concurrently publish events from all 5 instances
+		const publishPromises: Promise<{ sequenceId: number }>[] = [];
+		for (let i = 0; i < 25; i++) {
+			const instance = instances[i % instances.length]!;
+			publishPromises.push(
+				instance.publishEvent({
+					roomId: room.id,
+					senderId: `u${(i % 5) + 1}`,
+					type: "message.text",
+					content: { i },
+				}),
+			);
+		}
+
+		const results = await Promise.all(publishPromises);
+		const seqs = results.map((r) => r.sequenceId).sort((a, b) => a - b);
+
 		expect(seqs).toEqual(Array.from({ length: 25 }, (_, i) => i + 1));
 		expect(new Set(seqs).size).toBe(25);
 	});

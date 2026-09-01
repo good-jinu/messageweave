@@ -50,8 +50,23 @@ export function createMemoryStorage(db: MemoryDatabase): MessageWeaveStorage {
 
 	return {
 		async create({ model, data }) {
+			const table = (db[model] ??= []);
+			if (model === "sequence" && data.name !== undefined) {
+				if (table.some((r) => r.name === data.name)) {
+					throw new Error(
+						`Unique constraint failed: duplicate sequence name ${String(data.name)}`,
+					);
+				}
+			}
+			if (model === "event" && data.sequenceId !== undefined) {
+				if (table.some((r) => r.sequenceId === data.sequenceId)) {
+					throw new Error(
+						`Unique constraint failed: duplicate sequenceId ${String(data.sequenceId)}`,
+					);
+				}
+			}
 			const row = { id: generateId(), ...data };
-			(db[model] ??= []).push(row);
+			table.push(row);
 			return row;
 		},
 		async findOne({ model, where }) {
