@@ -1,3 +1,4 @@
+import { MessageWeaveError } from "../utils/validate";
 import type { FlowAdapter } from "./adapter";
 
 const SEQUENCE_NAME = "global";
@@ -5,42 +6,71 @@ const SEQUENCE_NAME = "global";
 /**
  * Assigns strictly-increasing `sequenceId` values for the event timeline.
  *
- * ChatCoreStorage exposes no cross-statement transaction primitive, so
- * monotonicity is guaranteed *within a single process* by serializing assignment
- * through an in-memory promise queue: each call waits for the previous one to
- * finish its full task before reading and incrementing the counter. Deployments
- * that publish from multiple processes must back ChatCore with a storage
- * implementation that provides its own atomic ordering.
+ * Uses Optimistic Concurrency Control (Compare-And-Swap) backed by `unadapter`'s
+ * conditional `update` queries with exponential backoff and jitter. This ensures
+ * monotonic, collision-free sequence numbers across multiple concurrent node
+ * processes or serverless instances sharing the same database storage.
  */
 export function createSequencer(adapter: FlowAdapter) {
 	let tail: Promise<unknown> = Promise.resolve();
 
 	async function bump(): Promise<number> {
-		const current = await adapter.findOne({
-			model: "sequence",
-			where: [{ field: "name", value: SEQUENCE_NAME }],
-		});
+		const maxRetries = 100;
+		const baseDelayMs = 2;
+		const maxDelayMs = 50;
 
-		if (!current) {
-			await adapter.create({
+		for (let attempt = 0; attempt < maxRetries; attempt++) {
+			const current = await adapter.findOne({
 				model: "sequence",
-				data: { name: SEQUENCE_NAME, value: 1 },
+				where: [{ field: "name", value: SEQUENCE_NAME }],
 			});
-			return 1;
+
+			if (!current) {
+				try {
+					await adapter.create({
+						model: "sequence",
+						data: { name: SEQUENCE_NAME, value: 1 },
+					});
+					return 1;
+				} catch {
+					// Another process created the initial row concurrently; retry
+					continue;
+				}
+			}
+
+			const currentVal = Number(current.value);
+			const nextVal = currentVal + 1;
+
+			const updated = await adapter.update({
+				model: "sequence",
+				where: [
+					{ field: "name", value: SEQUENCE_NAME },
+					{ field: "value", value: currentVal },
+				],
+				update: { value: nextVal },
+			});
+
+			if (updated) {
+				return nextVal;
+			}
+
+			// CAS conflict: another process incremented the sequence before us.
+			// Apply exponential backoff with random jitter before retrying.
+			const delay = Math.min(
+				maxDelayMs,
+				baseDelayMs * Math.pow(2, Math.min(attempt, 5)) + Math.random() * 5,
+			);
+			await new Promise((resolve) => setTimeout(resolve, delay));
 		}
 
-		const next = Number(current.value) + 1;
-		await adapter.update({
-			model: "sequence",
-			where: [{ field: "name", value: SEQUENCE_NAME }],
-			update: { value: next },
-		});
-		return next;
+		throw new MessageWeaveError(
+			`Failed to allocate sequence ID after ${maxRetries} CAS attempts due to contention`,
+		);
 	}
 
 	/**
-	 * Run `task` with the next sequence id, fully serialized against every other
-	 * call so the counter is never read concurrently.
+	 * Run `task` with the next sequence id, serialized within this process
+	 * and protected by database CAS across multiple processes.
 	 */
 	function withNextSequence<T>(
 		task: (sequenceId: number) => Promise<T>,
