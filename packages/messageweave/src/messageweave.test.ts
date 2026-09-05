@@ -1316,13 +1316,12 @@ describe("dynamic event subscriptions (flow.onEvent)", () => {
 		expect(eventsB).toEqual([m1.event.id, m2.event.id]);
 	});
 
-	it("executes async listeners concurrently with Promise.all", async () => {
+	it("executes async listeners concurrently with Promise.allSettled and isolates listener errors", async () => {
 		const events: string[] = [];
 
 		t.flow.onEvent(async (event) => {
 			events.push(`start_1_${event.sequenceId}`);
-			await new Promise((resolve) => setTimeout(resolve, 20));
-			events.push(`end_1_${event.sequenceId}`);
+			throw new Error("listener 1 failed");
 		});
 
 		t.flow.onEvent(async (event) => {
@@ -1332,14 +1331,15 @@ describe("dynamic event subscriptions (flow.onEvent)", () => {
 		});
 
 		const room = await t.flow.createRoom({ creatorId: "u1" });
-		await t.flow.sendMessage({
+		const result = await t.flow.sendMessage({
 			roomId: room.id,
 			senderId: "u1",
-			body: "test concurrency",
+			body: "test error isolation",
 		});
 
-		// Listener 2 finishes before Listener 1 because they run concurrently
-		expect(events).toEqual(["start_1_1", "start_2_1", "end_2_1", "end_1_1"]);
+		// Event successfully published despite Listener 1 throwing
+		expect(result.sequenceId).toBe(1);
+		expect(events).toEqual(["start_1_1", "start_2_1", "end_2_1"]);
 	});
 
 	it("handles publishing safely with zero registered listeners", async () => {

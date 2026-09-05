@@ -118,7 +118,7 @@ export function createMessageWeave(options: MessageWeaveOptions): MessageWeave {
 
 	const emitEvent = async (event: FlowEvent, context: PublishContext) => {
 		if (listeners.size === 0) return;
-		await Promise.all(
+		await Promise.allSettled(
 			Array.from(listeners, (listener) => listener(event, context)),
 		);
 	};
