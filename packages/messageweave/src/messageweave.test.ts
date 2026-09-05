@@ -1315,4 +1315,40 @@ describe("dynamic event subscriptions (flow.onEvent)", () => {
 
 		expect(eventsB).toEqual([m1.event.id, m2.event.id]);
 	});
+
+	it("executes async listeners concurrently with Promise.allSettled and isolates listener errors", async () => {
+		const events: string[] = [];
+
+		t.flow.onEvent(async (event) => {
+			events.push(`start_1_${event.sequenceId}`);
+			throw new Error("listener 1 failed");
+		});
+
+		t.flow.onEvent(async (event) => {
+			events.push(`start_2_${event.sequenceId}`);
+			await new Promise((resolve) => setTimeout(resolve, 5));
+			events.push(`end_2_${event.sequenceId}`);
+		});
+
+		const room = await t.flow.createRoom({ creatorId: "u1" });
+		const result = await t.flow.sendMessage({
+			roomId: room.id,
+			senderId: "u1",
+			body: "test error isolation",
+		});
+
+		// Event successfully published despite Listener 1 throwing
+		expect(result.sequenceId).toBe(1);
+		expect(events).toEqual(["start_1_1", "start_2_1", "end_2_1"]);
+	});
+
+	it("handles publishing safely with zero registered listeners", async () => {
+		const room = await t.flow.createRoom({ creatorId: "u1" });
+		const result = await t.flow.sendMessage({
+			roomId: room.id,
+			senderId: "u1",
+			body: "no listeners",
+		});
+		expect(result.sequenceId).toBe(1);
+	});
 });
