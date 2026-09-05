@@ -1316,33 +1316,34 @@ describe("dynamic event subscriptions (flow.onEvent)", () => {
 		expect(eventsB).toEqual([m1.event.id, m2.event.id]);
 	});
 
-	it("executes async listeners sequentially in registration order", async () => {
-		const order: string[] = [];
+	it("executes async listeners concurrently with Promise.all", async () => {
+		const events: string[] = [];
 
 		t.flow.onEvent(async (event) => {
-			order.push(`listener1_start_${event.sequenceId}`);
+			events.push(`start_1_${event.sequenceId}`);
 			await new Promise((resolve) => setTimeout(resolve, 20));
-			order.push(`listener1_end_${event.sequenceId}`);
+			events.push(`end_1_${event.sequenceId}`);
 		});
 
 		t.flow.onEvent(async (event) => {
-			order.push(`listener2_start_${event.sequenceId}`);
+			events.push(`start_2_${event.sequenceId}`);
 			await new Promise((resolve) => setTimeout(resolve, 5));
-			order.push(`listener2_end_${event.sequenceId}`);
+			events.push(`end_2_${event.sequenceId}`);
 		});
 
 		const room = await t.flow.createRoom({ creatorId: "u1" });
 		await t.flow.sendMessage({
 			roomId: room.id,
 			senderId: "u1",
-			body: "test sequence",
+			body: "test concurrency",
 		});
 
-		expect(order).toEqual([
-			"listener1_start_1",
-			"listener1_end_1",
-			"listener2_start_1",
-			"listener2_end_1",
+		// Listener 2 finishes before Listener 1 because they run concurrently
+		expect(events).toEqual([
+			"start_1_1",
+			"start_2_1",
+			"end_2_1",
+			"end_1_1",
 		]);
 	});
 

@@ -118,9 +118,9 @@ export function createMessageWeave(options: MessageWeaveOptions): MessageWeave {
 
 	const emitEvent = async (event: FlowEvent, context: PublishContext) => {
 		if (listeners.size === 0) return;
-		for (const listener of listeners) {
-			await listener(event, context);
-		}
+		await Promise.all(
+			Array.from(listeners, (listener) => listener(event, context)),
+		);
 	};
 
 	const { createRoom, getRoom, listRooms } = createRoomMethods(
