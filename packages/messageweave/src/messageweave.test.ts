@@ -1315,4 +1315,44 @@ describe("dynamic event subscriptions (flow.onEvent)", () => {
 
 		expect(eventsB).toEqual([m1.event.id, m2.event.id]);
 	});
+
+	it("executes async listeners sequentially in registration order", async () => {
+		const order: string[] = [];
+
+		t.flow.onEvent(async (event) => {
+			order.push(`listener1_start_${event.sequenceId}`);
+			await new Promise((resolve) => setTimeout(resolve, 20));
+			order.push(`listener1_end_${event.sequenceId}`);
+		});
+
+		t.flow.onEvent(async (event) => {
+			order.push(`listener2_start_${event.sequenceId}`);
+			await new Promise((resolve) => setTimeout(resolve, 5));
+			order.push(`listener2_end_${event.sequenceId}`);
+		});
+
+		const room = await t.flow.createRoom({ creatorId: "u1" });
+		await t.flow.sendMessage({
+			roomId: room.id,
+			senderId: "u1",
+			body: "test sequence",
+		});
+
+		expect(order).toEqual([
+			"listener1_start_1",
+			"listener1_end_1",
+			"listener2_start_1",
+			"listener2_end_1",
+		]);
+	});
+
+	it("handles publishing safely with zero registered listeners", async () => {
+		const room = await t.flow.createRoom({ creatorId: "u1" });
+		const result = await t.flow.sendMessage({
+			roomId: room.id,
+			senderId: "u1",
+			body: "no listeners",
+		});
+		expect(result.sequenceId).toBe(1);
+	});
 });
