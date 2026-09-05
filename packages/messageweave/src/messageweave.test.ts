@@ -1339,12 +1339,7 @@ describe("dynamic event subscriptions (flow.onEvent)", () => {
 		});
 
 		// Listener 2 finishes before Listener 1 because they run concurrently
-		expect(events).toEqual([
-			"start_1_1",
-			"start_2_1",
-			"end_2_1",
-			"end_1_1",
-		]);
+		expect(events).toEqual(["start_1_1", "start_2_1", "end_2_1", "end_1_1"]);
 	});
 
 	it("handles publishing safely with zero registered listeners", async () => {
