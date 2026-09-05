@@ -1,5 +1,37 @@
 # messageweave
 
+## 0.2.0
+
+### Minor Changes
+
+- [#20](https://github.com/good-jinu/messageweave/pull/20) [`2e2c139`](https://github.com/good-jinu/messageweave/commit/2e2c13900b40e080c998469a39bb386ea197528b) Thanks [@good-jinu](https://github.com/good-jinu)! - Add lifecycle hooks, realtime subscriptions, and update package branding to MessageWeave:
+
+  - Add `beforePublish`, `afterPublish`, and `onError` lifecycle hooks to `MessageWeaveOptions`.
+  - Add `flow.subscribe()` async iterable stream and pluggable `PubSubAdapter` / `MemoryPubSubAdapter` for realtime event streaming.
+  - Add `onEvent` subscriber registration to `MessageWeave` instance.
+  - Update engine core exports and naming to `MessageWeave` / `createMessageWeave`.
+  - Update CLI schema generation to support `messageweave` schemas across database adapters.
+
+- [#16](https://github.com/good-jinu/messageweave/pull/16) [`350127f`](https://github.com/good-jinu/messageweave/commit/350127fd8ae2512dc7e3344e1a36a71b80a1b78a) Thanks [@good-jinu](https://github.com/good-jinu)! - Add message edit and delete support and timeline projection helper:
+
+  - Add `editMessage()` to `ChatCore` to publish immutable `message.edit` revision events.
+  - Add `deleteMessage()` to `ChatCore` to publish immutable `message.delete` tombstone events.
+  - Export `projectTimeline()` utility to fold event streams (revisions and deletions) into UI-ready `ProjectedMessage` models.
+  - Export `EditMessageInput`, `DeleteMessageInput`, `ProjectedMessage`, and `ProjectTimelineOptions` types.
+
+### Patch Changes
+
+- [#22](https://github.com/good-jinu/messageweave/pull/22) [`0bab1d0`](https://github.com/good-jinu/messageweave/commit/0bab1d0286640f2336578ef8408e4c6dc7d6aba8) Thanks [@good-jinu](https://github.com/good-jinu)! - Execute `onEvent` listeners concurrently with `Promise.allSettled` and fast-path zero listeners:
+
+  - Use `Promise.allSettled` to execute registered in-process `onEvent` listeners concurrently, eliminating sequential emission latency waterfalls.
+  - Isolate listener errors so failing listeners cannot prevent other listeners from running or cause `publishEvent()` to throw after event persistence succeeds.
+  - Fast-path event emission when zero `onEvent` listeners are registered.
+
+- [#21](https://github.com/good-jinu/messageweave/pull/21) [`ed2955c`](https://github.com/good-jinu/messageweave/commit/ed2955c7b966ccff1d7ce1ad92f3eda7f36485fd) Thanks [@good-jinu](https://github.com/good-jinu)! - Implement multi-process Optimistic Concurrency Control (CAS) sequence allocation:
+
+  - Use atomic conditional `update` queries on the `sequence` table with exponential backoff and jitter to prevent sequence collisions across concurrent processes.
+  - Ensure monotonic, collision-free global sequence assignment in multi-container and serverless deployments.
+
 ## 0.1.0
 
 ### Minor Changes
