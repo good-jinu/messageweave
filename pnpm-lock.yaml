@@ -95,8 +95,8 @@ importers:
         specifier: workspace:*
         version: link:../messageweave
       unadapter:
-        specifier: ^0.4.0
-        version: 0.4.0
+        specifier: ^0.4.1
+        version: 0.4.1
     devDependencies:
       '@types/node':
         specifier: ^25.3.2
@@ -114,8 +114,8 @@ importers:
   packages/messageweave:
     dependencies:
       unadapter:
-        specifier: ^0.4.0
-        version: 0.4.0
+        specifier: ^0.4.1
+        version: 0.4.1
       zod:
         specifier: ^4.3.6
         version: 4.4.3
@@ -2579,8 +2579,8 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
-  unadapter@0.4.0:
-    resolution: {integrity: sha512-CpkzzyIi+B6LO5mjXnLgt/aqzspFZIpW0FxKD7HMDNPHPkdwLiAJj2/mbM9/yy+046fTouPbqTAFOwWE6vASHg==}
+  unadapter@0.4.1:
+    resolution: {integrity: sha512-jl8yzSkbLCvzKlCMNRwQjGntr1CxAjvGU+Knnz/P5mYlD0N2YFkFuYOh8EruaN1JbKonPEMvxh88fVByRTShyA==}
     engines: {node: '>=20.11.1'}
 
   unconfig-core@7.5.0:
@@ -4805,7 +4805,7 @@ snapshots:
 
   typescript@6.0.3: {}
 
-  unadapter@0.4.0:
+  unadapter@0.4.1:
     dependencies:
       defu: 6.1.7
       pathe: 2.0.3

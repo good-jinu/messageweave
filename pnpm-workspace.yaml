@@ -20,4 +20,4 @@ allowBuilds:
 linkWorkspacePackages: true
 
 minimumReleaseAgeExclude:
-  - unadapter@0.4.0
+  - unadapter@0.4.1
