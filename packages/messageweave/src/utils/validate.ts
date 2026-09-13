@@ -7,9 +7,6 @@ export interface MessageWeaveError extends Error {
 	name: "MessageWeaveError";
 }
 
-/** Backwards-compatible alias for {@link MessageWeaveError}. */
-export type ChatCoreError = MessageWeaveError;
-
 interface MessageWeaveErrorConstructor {
 	new (message: string): MessageWeaveError;
 	(message: string): MessageWeaveError;
@@ -38,9 +35,6 @@ Object.defineProperty(MessageWeaveErrorImpl.prototype, "constructor", {
 /** Error constructor used for invalid MessageWeave inputs and operations. */
 export const MessageWeaveError =
 	MessageWeaveErrorImpl as MessageWeaveErrorConstructor;
-
-/** Backwards-compatible alias for {@link MessageWeaveError}. */
-export const ChatCoreError = MessageWeaveError;
 
 const jsonValueSchema: z.ZodType<JsonValue> = z.lazy(() =>
 	z.union([

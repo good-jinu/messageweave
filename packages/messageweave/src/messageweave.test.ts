@@ -4,7 +4,7 @@ import type { TestInstance } from "./test-utils";
 import { getTestInstance } from "./test-utils";
 import { createMemoryStorage } from "./test-utils/memory-storage";
 import type { AttachmentReference } from "./types";
-import { ChatCoreError, MessageWeaveError } from "./utils/validate";
+import { MessageWeaveError } from "./utils/validate";
 
 // Helper: publish N events to a room
 async function publishN(flow: TestInstance["flow"], roomId: string, n: number) {
@@ -97,10 +97,6 @@ describe("rooms", () => {
 				metadata: { createdAt: new Date() },
 			}),
 		).rejects.toBeInstanceOf(MessageWeaveError);
-	});
-
-	it("supports ChatCoreError as backward-compatible alias", () => {
-		expect(ChatCoreError).toBe(MessageWeaveError);
 	});
 });
 
@@ -956,7 +952,7 @@ describe("attachment references", () => {
 describe("createRoom — input validation", () => {
 	it("rejects an empty creatorId", async () => {
 		await expect(t.flow.createRoom({ creatorId: "" })).rejects.toBeInstanceOf(
-			ChatCoreError,
+			MessageWeaveError,
 		);
 	});
 });

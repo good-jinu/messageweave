@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generateChatCoreSchema, generateMessageWeaveSchema } from "./generate";
+import { generateMessageWeaveSchema } from "./generate";
 
 describe("generateMessageWeaveSchema", () => {
 	it("generates SQLite DDL for MessageWeave tables", async () => {
@@ -47,10 +47,5 @@ describe("generateMessageWeaveSchema", () => {
 		expect(schema).toContain(
 			"room       Room        @relation(fields: [roomId], references: [id], onDelete: Cascade)",
 		);
-	});
-
-	it("works via generateChatCoreSchema backward compatibility alias", async () => {
-		const ddl = await generateChatCoreSchema({ dialect: "sqlite" });
-		expect(ddl).toContain('create table "room"');
 	});
 });

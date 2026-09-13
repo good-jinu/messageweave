@@ -322,9 +322,6 @@ export interface MessageWeaveHooks {
 	onRoomCreated?: (room: Room, input: CreateRoomInput) => void | Promise<void>;
 }
 
-/** Backwards-compatible alias for {@link MessageWeaveHooks}. */
-export type ChatCoreHooks = MessageWeaveHooks;
-
 /**
  * Pluggable pub/sub adapter interface for real-time multi-node event distribution.
  * Enables scaling MessageWeave across multiple server instances (e.g. via Redis,

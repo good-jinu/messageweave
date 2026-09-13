@@ -1,19 +1,10 @@
 export {
-	type ChatCoreSchemaDialect,
-	type ChatCoreSchemaFormat,
-	type ChatCoreSchemaIdStrategy,
-	type ChatCoreSchemaProvider,
-	type GenerateChatCoreDrizzleSchemaOptions,
-	type GenerateChatCorePrismaSchemaOptions,
-	type GenerateChatCoreSchemaOptions,
-	type GenerateChatCoreSqlSchemaOptions,
 	type GenerateDrizzleSchemaOptions,
 	type GenerateMessageWeaveDrizzleSchemaOptions,
 	type GenerateMessageWeavePrismaSchemaOptions,
 	type GenerateMessageWeaveSchemaOptions,
 	type GenerateMessageWeaveSqlSchemaOptions,
 	type GeneratePrismaSchemaOptions,
-	generateChatCoreSchema,
 	generateDrizzleSchema,
 	generateMessageWeaveSchema,
 	generatePrismaSchema,
@@ -23,8 +14,6 @@ export {
 	type MessageWeaveSchemaProvider,
 } from "./generate";
 export {
-	chatCoreTables,
-	getChatCoreTables,
 	getMessageWeaveTables,
 	messageWeaveTables,
 } from "./schema";
