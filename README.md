@@ -66,10 +66,10 @@ For production, use one of MessageWeave's optional database entry points:
 
 ```ts
 import { createMessageWeave } from "messageweave";
-import { drizzleStorage } from "messageweave/drizzle";
+import { drizzleAdapter } from "messageweave/drizzle";
 
 const flow = createMessageWeave({
-  storage: drizzleStorage(db, {
+  storage: drizzleAdapter(db, {
     provider: "pg",
     schema,
   }),

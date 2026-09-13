@@ -103,7 +103,7 @@ const deleteMessageSchema = z.object({
 export function parseCreateRoomInput(input: unknown) {
 	const result = createRoomSchema.safeParse(input);
 	if (!result.success) {
-		throw new ChatCoreError(
+		throw new MessageWeaveError(
 			`Invalid createRoom input: ${result.error.issues.map((i) => i.message).join(", ")}`,
 		);
 	}
@@ -114,7 +114,7 @@ export function parseCreateRoomInput(input: unknown) {
 export function parsePublishEventInput(input: unknown) {
 	const result = publishEventSchema.safeParse(input);
 	if (!result.success) {
-		throw new ChatCoreError(
+		throw new MessageWeaveError(
 			`Invalid publishEvent input: ${result.error.issues.map((i) => i.message).join(", ")}`,
 		);
 	}
@@ -125,7 +125,7 @@ export function parsePublishEventInput(input: unknown) {
 export function parseSendMessageInput(input: unknown) {
 	const result = sendMessageSchema.safeParse(input);
 	if (!result.success) {
-		throw new ChatCoreError(
+		throw new MessageWeaveError(
 			`Invalid sendMessage input: ${result.error.issues.map((i) => i.message).join(", ")}`,
 		);
 	}
@@ -136,7 +136,7 @@ export function parseSendMessageInput(input: unknown) {
 export function parseEditMessageInput(input: unknown) {
 	const result = editMessageSchema.safeParse(input);
 	if (!result.success) {
-		throw new ChatCoreError(
+		throw new MessageWeaveError(
 			`Invalid editMessage input: ${result.error.issues.map((i) => i.message).join(", ")}`,
 		);
 	}
@@ -147,7 +147,7 @@ export function parseEditMessageInput(input: unknown) {
 export function parseDeleteMessageInput(input: unknown) {
 	const result = deleteMessageSchema.safeParse(input);
 	if (!result.success) {
-		throw new ChatCoreError(
+		throw new MessageWeaveError(
 			`Invalid deleteMessage input: ${result.error.issues.map((i) => i.message).join(", ")}`,
 		);
 	}
