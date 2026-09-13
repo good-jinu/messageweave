@@ -10,6 +10,7 @@ const sidebars: SidebarsConfig = {
 		"intro",
 		"getting-started",
 		"database-adapters",
+		"attachments",
 		{
 			type: "category",
 			label: "Concepts",
