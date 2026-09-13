@@ -1,6 +1,6 @@
 import type { FlowAdapter } from "../db/adapter";
 import { toEvent } from "../db/rows";
-import type { ChatCoreStorageWhere } from "../storage";
+import type { MessageWeaveStorageWhere } from "../storage";
 import type { GetSyncStreamOptions, SyncStreamResult } from "../types";
 
 /** Global synchronization stream. */
@@ -26,13 +26,13 @@ export function createSyncMethods(adapter: FlowAdapter, defaultLimit: number) {
 			return { events: [], nextToken: since };
 		}
 
-		const baseWhere: ChatCoreStorageWhere[] =
+		const baseWhere: MessageWeaveStorageWhere[] =
 			since > 0 ? [{ field: "sequenceId", value: since, operator: "gt" }] : [];
 
 		if (roomIds !== undefined) {
 			// Scoped stream: DB-level roomId filter plus a global page boundary
 			// read for the resume token.
-			const scopedWhere: ChatCoreStorageWhere[] = [
+			const scopedWhere: MessageWeaveStorageWhere[] = [
 				...baseWhere,
 				{ field: "roomId", value: roomIds, operator: "in" },
 			];

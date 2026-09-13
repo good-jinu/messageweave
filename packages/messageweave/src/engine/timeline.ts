@@ -1,6 +1,6 @@
 import type { FlowAdapter } from "../db/adapter";
 import { toEvent } from "../db/rows";
-import type { ChatCoreStorageWhere } from "../storage";
+import type { MessageWeaveStorageWhere } from "../storage";
 import type { FlowEvent, GetTimelineOptions } from "../types";
 
 /** Timeline read methods. */
@@ -16,7 +16,9 @@ export function createTimelineMethods(
 		roomId: string,
 		{ limit, beforeSequenceId }: GetTimelineOptions = {},
 	): Promise<FlowEvent[]> {
-		const where: ChatCoreStorageWhere[] = [{ field: "roomId", value: roomId }];
+		const where: MessageWeaveStorageWhere[] = [
+			{ field: "roomId", value: roomId },
+		];
 		if (beforeSequenceId !== undefined) {
 			where.push({
 				field: "sequenceId",
