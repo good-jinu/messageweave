@@ -1,5 +1,12 @@
 # @messageweave/cli
 
+## 0.2.1
+
+### Patch Changes
+
+- Updated dependencies [[`947f4c0`](https://github.com/good-jinu/messageweave/commit/947f4c0dc6866156083ee7d5f38cf033c06b40ff)]:
+  - messageweave@0.2.1
+
 ## 0.2.0
 
 ### Minor Changes
