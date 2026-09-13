@@ -1,5 +1,11 @@
 # messageweave
 
+## 0.2.1
+
+### Patch Changes
+
+- [#24](https://github.com/good-jinu/messageweave/pull/24) [`947f4c0`](https://github.com/good-jinu/messageweave/commit/947f4c0dc6866156083ee7d5f38cf033c06b40ff) Thanks [@good-jinu](https://github.com/good-jinu)! - Fix outdated internal `ChatCoreError` and `ChatCoreStorageWhere` references to `MessageWeaveError` and `MessageWeaveStorageWhere`, and update README adapter snippet.
+
 ## 0.2.0
 
 ### Minor Changes
