@@ -49,5 +49,48 @@ const { event, sequenceId } = await flow.publishEvent({
 });
 ```
 
-Edits and reactions are *also* events — they reference the events they act on
-via `parentEventIds`, forming a [threaded DAG](./rooms-and-state.md).
+## Messages, edits & deletes
+
+For typical chat messaging, MessageWeave provides convenient first-class methods
+that handle proper event typing, validation, and parent DAG linkage:
+
+```ts
+// 1. Send a plain text message (or reply)
+const msg = await flow.sendMessage({
+  roomId: room.id,
+  senderId: "u1",
+  body: "Hello world!",
+  replyToMessageId: parentMessageId, // optional thread parent
+});
+
+// 2. Edit an existing message (creates an immutable `message.edit` event)
+await flow.editMessage({
+  roomId: room.id,
+  senderId: "u1",
+  messageId: msg.event.id,
+  body: "Hello world (edited)!",
+});
+
+// 3. Delete a message (creates an immutable `message.delete` tombstone)
+await flow.deleteMessage({
+  roomId: room.id,
+  senderId: "u1",
+  messageId: msg.event.id,
+  reason: "Mistake",
+});
+```
+
+## Projecting the timeline for UI
+
+Because messages are event-sourced, edits and tombstones do not overwrite previous
+records. To present a unified list of messages in your UI, use `projectTimeline`:
+
+```ts
+import { projectTimeline } from "messageweave";
+
+const events = await flow.getRoomTimeline(room.id);
+const messages = projectTimeline(events);
+
+// Returns UI-ready ProjectedMessage objects:
+// [{ id, roomId, senderId, body, isEdited, isDeleted, createdAt, ... }]
+```

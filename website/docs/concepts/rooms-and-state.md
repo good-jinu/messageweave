@@ -64,3 +64,34 @@ const recent = await flow.getRoomTimeline(room.id, {
   beforeSequenceId: cursor,
 });
 ```
+
+## Lifecycle hooks
+
+You can register hooks on the MessageWeave engine to intercept and react to
+operations:
+
+```ts
+const flow = createMessageWeave({
+  storage,
+  hooks: {
+    // Validate or authorize before sequence assignment.
+    // Throwing an error aborts the publish without consuming a sequence ID.
+    beforePublish: async (input) => {
+      if (input.content.bannedWord) {
+        throw new Error("Prohibited content");
+      }
+    },
+
+    // Asynchronously react after an event has been persisted.
+    // Runs outside the sequencer lock to keep allocations high-throughput.
+    onPublish: async (event, context) => {
+      await sendPushNotifications(event);
+    },
+
+    // Triggered after a room is successfully created.
+    onRoomCreated: async (room, input) => {
+      console.log(`Room created: ${room.id}`);
+    },
+  },
+});
+```

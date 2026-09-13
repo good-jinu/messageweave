@@ -32,6 +32,56 @@ Poll `getSyncStream` on an interval, or trigger it from your own
 push/WebSocket layer — MessageWeave is transport-agnostic, so *how* you deliver the
 stream to clients is up to you.
 
+## Real-time streaming with `subscribe`
+
+In addition to polling `getSyncStream`, MessageWeave provides an async iterable stream
+via `flow.subscribe()`:
+
+```ts
+// Stream live events with automatic catch-up and abort support
+const controller = new AbortController();
+
+const stream = flow.subscribe({
+  roomId: room.id,
+  sinceSequenceId: cursor, // fetches missed events first, then streams live events
+  signal: controller.signal,
+});
+
+for await (const event of stream) {
+  sendToClient(event);
+}
+```
+
+`flow.subscribe()` guarantees gapless and duplicate-free delivery across the transition
+from historical events to live events. It works out-of-the-box with Server-Sent Events (SSE),
+WebSockets, and Edge runtime workers.
+
+## In-process event listener with `onEvent`
+
+For direct in-process notifications (e.g. broadcasting to local WebSocket connections):
+
+```ts
+const unsubscribe = flow.onEvent((event, context) => {
+  wsServer.to(event.roomId).emit("event", event);
+});
+
+// Later, cleanup:
+unsubscribe();
+```
+
+## Scaling across multiple nodes (`PubSubAdapter`)
+
+By default, in-memory pub/sub handles live events on a single node. For distributed
+deployments across multiple processes or containers, supply a `PubSubAdapter` (such as
+Redis or PostgreSQL LISTEN/NOTIFY) when creating the engine:
+
+```ts
+const flow = createMessageWeave({
+  storage,
+  pubsub: myRedisPubSubAdapter,
+});
+```
+
 ## How the sequence stays monotonic
 
 MessageWeave's storage contract exposes no transaction primitive, so MessageWeave
