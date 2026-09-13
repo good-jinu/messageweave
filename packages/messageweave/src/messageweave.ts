@@ -88,9 +88,6 @@ export interface MessageWeave {
 	onEvent(listener: EventListener): () => void;
 }
 
-/** Backwards-compatible alias for {@link MessageWeave}. */
-export type ChatCore = MessageWeave;
-
 /**
  * Create an in-process, event-sourced messaging engine backed by the supplied
  * MessageWeave storage backend.
@@ -164,6 +161,3 @@ export function createMessageWeave(options: MessageWeaveOptions): MessageWeave {
 		onEvent,
 	};
 }
-
-/** Backwards-compatible alias for {@link createMessageWeave}. */
-export const createChatCore = createMessageWeave;

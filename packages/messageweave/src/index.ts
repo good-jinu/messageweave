@@ -13,22 +13,12 @@ export {
 } from "./generate";
 export {
 	createMessageWeave,
-	createMessageWeave as createChatCore,
 	type MessageWeave,
-	type MessageWeave as ChatCore,
 } from "./messageweave";
-export type {
-	MessageWeaveOptions,
-	MessageWeaveOptions as ChatCoreOptions,
-} from "./options";
+export type { MessageWeaveOptions } from "./options";
 export { createMemoryPubSub } from "./realtime/pubsub";
 
 export type {
-	ChatCoreStorage,
-	ChatCoreStorageOperator,
-	ChatCoreStorageRow,
-	ChatCoreStorageValue,
-	ChatCoreStorageWhere,
 	MessageWeaveStorage,
 	MessageWeaveStorageIdStrategy,
 	MessageWeaveStorageOperator,
@@ -39,7 +29,4 @@ export type {
 export type * from "./types";
 export { generateId } from "./utils/id";
 export { projectTimeline } from "./utils/project";
-export {
-	ChatCoreError,
-	MessageWeaveError,
-} from "./utils/validate";
+export { MessageWeaveError } from "./utils/validate";

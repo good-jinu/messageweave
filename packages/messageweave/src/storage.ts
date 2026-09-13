@@ -10,9 +10,6 @@ export type MessageWeaveStorageValue =
 	| Temporal.ZonedDateTime
 	| null;
 
-/** Backwards-compatible alias for {@link MessageWeaveStorageValue}. */
-export type ChatCoreStorageValue = MessageWeaveStorageValue;
-
 /** Query operators supported by MessageWeave storage implementations. */
 export type MessageWeaveStorageOperator =
 	| "eq"
@@ -26,9 +23,6 @@ export type MessageWeaveStorageOperator =
 	| "starts_with"
 	| "ends_with";
 
-/** Backwards-compatible alias for {@link MessageWeaveStorageOperator}. */
-export type ChatCoreStorageOperator = MessageWeaveStorageOperator;
-
 /** A single storage-layer filter predicate. */
 export interface MessageWeaveStorageWhere {
 	/** Logical field name to filter. */
@@ -41,14 +35,8 @@ export interface MessageWeaveStorageWhere {
 	connector?: "AND" | "OR";
 }
 
-/** Backwards-compatible alias for {@link MessageWeaveStorageWhere}. */
-export type ChatCoreStorageWhere = MessageWeaveStorageWhere;
-
 /** A raw storage row, before/after domain mapping. */
 export type MessageWeaveStorageRow = Record<string, unknown>;
-
-/** Backwards-compatible alias for {@link MessageWeaveStorageRow}. */
-export type ChatCoreStorageRow = MessageWeaveStorageRow;
 
 /** Primary-key strategy shared by built-in MessageWeave storage adapters. */
 export type MessageWeaveStorageIdStrategy =
@@ -89,6 +77,3 @@ export interface MessageWeaveStorage {
 		where?: MessageWeaveStorageWhere[];
 	}): Promise<number>;
 }
-
-/** Backwards-compatible alias for {@link MessageWeaveStorage}. */
-export type ChatCoreStorage = MessageWeaveStorage;

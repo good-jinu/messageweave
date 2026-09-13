@@ -79,18 +79,6 @@ export type GenerateMessageWeaveSchemaOptions =
 	| GenerateMessageWeaveDrizzleSchemaOptions
 	| GenerateMessageWeavePrismaSchemaOptions;
 
-export type ChatCoreSchemaFormat = MessageWeaveSchemaFormat;
-export type ChatCoreSchemaDialect = MessageWeaveSchemaDialect;
-export type ChatCoreSchemaProvider = MessageWeaveSchemaProvider;
-export type ChatCoreSchemaIdStrategy = MessageWeaveSchemaIdStrategy;
-export type GenerateChatCoreSqlSchemaOptions =
-	GenerateMessageWeaveSqlSchemaOptions;
-export type GenerateChatCoreDrizzleSchemaOptions =
-	GenerateMessageWeaveDrizzleSchemaOptions;
-export type GenerateChatCorePrismaSchemaOptions =
-	GenerateMessageWeavePrismaSchemaOptions;
-export type GenerateChatCoreSchemaOptions = GenerateMessageWeaveSchemaOptions;
-
 type EmptyDatabase = Record<string, never>;
 
 interface AdvancedDatabaseOptions {
@@ -124,9 +112,6 @@ export async function generateMessageWeaveSchema(
 	);
 	return applyMessageWeaveForeignKeyCascades(sql, options.dialect);
 }
-
-/** Backwards-compatible alias for {@link generateMessageWeaveSchema}. */
-export const generateChatCoreSchema = generateMessageWeaveSchema;
 
 export {
 	type GenerateDrizzleSchemaOptions,
@@ -194,6 +179,3 @@ function applyMessageWeaveForeignKeyCascades(
 		sql,
 	);
 }
-
-export const applyChatCoreForeignKeyCascades =
-	applyMessageWeaveForeignKeyCascades;

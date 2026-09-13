@@ -36,6 +36,3 @@ export interface MessageWeaveOptions {
 	 */
 	pubsub?: PubSubAdapter;
 }
-
-/** Backwards-compatible alias for {@link MessageWeaveOptions}. */
-export type ChatCoreOptions = MessageWeaveOptions;

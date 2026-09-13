@@ -14,8 +14,8 @@
 
 - [#16](https://github.com/good-jinu/messageweave/pull/16) [`350127f`](https://github.com/good-jinu/messageweave/commit/350127fd8ae2512dc7e3344e1a36a71b80a1b78a) Thanks [@good-jinu](https://github.com/good-jinu)! - Add message edit and delete support and timeline projection helper:
 
-  - Add `editMessage()` to `ChatCore` to publish immutable `message.edit` revision events.
-  - Add `deleteMessage()` to `ChatCore` to publish immutable `message.delete` tombstone events.
+  - Add `editMessage()` to `MessageWeave` to publish immutable `message.edit` revision events.
+  - Add `deleteMessage()` to `MessageWeave` to publish immutable `message.delete` tombstone events.
   - Export `projectTimeline()` utility to fold event streams (revisions and deletions) into UI-ready `ProjectedMessage` models.
   - Export `EditMessageInput`, `DeleteMessageInput`, `ProjectedMessage`, and `ProjectTimelineOptions` types.
 
@@ -50,8 +50,8 @@
 
 - [#11](https://github.com/good-jinu/messageweave/pull/11) [`820495d`](https://github.com/good-jinu/messageweave/commit/820495db43fd9d740df3d33ea375dd548937f1af) Thanks [@good-jinu](https://github.com/good-jinu)! - Add message edit and delete support and timeline projection helper:
 
-  - Add `editMessage()` to `ChatCore` to publish immutable `message.edit` revision events.
-  - Add `deleteMessage()` to `ChatCore` to publish immutable `message.delete` tombstone events.
+  - Add `editMessage()` to `MessageWeave` to publish immutable `message.edit` revision events.
+  - Add `deleteMessage()` to `MessageWeave` to publish immutable `message.delete` tombstone events.
   - Export `projectTimeline()` utility to fold event streams (revisions and deletions) into UI-ready `ProjectedMessage` models.
   - Export `EditMessageInput`, `DeleteMessageInput`, `ProjectedMessage`, and `ProjectTimelineOptions` types.
 
