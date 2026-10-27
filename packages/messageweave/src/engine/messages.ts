@@ -29,7 +29,11 @@ export function createMessageMethods(
 		});
 	}
 
-	/** Publish an edit revision for an existing message. */
+	/**
+	 * Publish an edit revision for an existing message. Extra `content` is
+	 * spread first so it can never redirect the edit (`targetMessageId`) or
+	 * replace the engine-owned fields.
+	 */
 	async function editMessage(
 		input: EditMessageInput,
 	): Promise<PublishEventResult> {
@@ -39,16 +43,19 @@ export function createMessageMethods(
 			senderId: data.senderId,
 			type: "message.edit",
 			content: {
+				...(data.content ?? {}),
 				targetMessageId: data.messageId,
 				body: data.body,
 				editedAt: Date.now(),
-				...(data.content ?? {}),
 			},
 			parentEventIds: [data.messageId],
 		});
 	}
 
-	/** Publish a tombstone event marking an existing message as deleted. */
+	/**
+	 * Publish a tombstone event marking an existing message as deleted. Extra
+	 * `content` is spread first so it can never redirect the deletion.
+	 */
 	async function deleteMessage(
 		input: DeleteMessageInput,
 	): Promise<PublishEventResult> {
@@ -58,11 +65,11 @@ export function createMessageMethods(
 			senderId: data.senderId,
 			type: "message.delete",
 			content: {
+				...(data.content ?? {}),
 				targetMessageId: data.messageId,
 				tombstone: true,
 				deletedAt: Date.now(),
 				...(data.reason !== undefined ? { reason: data.reason } : {}),
-				...(data.content ?? {}),
 			},
 			parentEventIds: [data.messageId],
 		});

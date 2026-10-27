@@ -1348,3 +1348,188 @@ describe("dynamic event subscriptions (flow.onEvent)", () => {
 		expect(result.sequenceId).toBe(1);
 	});
 });
+
+describe("edit/delete target integrity", () => {
+	async function setup(hooks?: Parameters<typeof getTestInstance>[0]) {
+		const instance = hooks ? getTestInstance(hooks) : t;
+		const room = await instance.flow.createRoom({ creatorId: "alice" });
+		const victim = await instance.flow.sendMessage({
+			roomId: room.id,
+			senderId: "alice",
+			body: "alice original",
+		});
+		const own = await instance.flow.sendMessage({
+			roomId: room.id,
+			senderId: "mallory",
+			body: "mallory original",
+		});
+		return { flow: instance.flow, room, victim, own };
+	}
+
+	it("editMessage ignores content.targetMessageId and keeps messageId as the target", async () => {
+		const { flow, room, victim, own } = await setup();
+
+		const result = await flow.editMessage({
+			roomId: room.id,
+			senderId: "mallory",
+			messageId: own.event.id,
+			body: "edited",
+			content: { targetMessageId: victim.event.id, body: "ignored" },
+		});
+
+		expect(result.event.content.targetMessageId).toBe(own.event.id);
+		expect(result.event.content.body).toBe("edited");
+		const projected = projectTimeline(await flow.getRoomTimeline(room.id));
+		expect(projected.find((m) => m.id === victim.event.id)!.isEdited).toBe(
+			false,
+		);
+		expect(projected.find((m) => m.id === own.event.id)!.body).toBe("edited");
+	});
+
+	it("deleteMessage ignores content.targetMessageId and content.tombstone", async () => {
+		const { flow, room, victim, own } = await setup();
+
+		const result = await flow.deleteMessage({
+			roomId: room.id,
+			senderId: "mallory",
+			messageId: own.event.id,
+			content: { targetMessageId: victim.event.id, tombstone: false },
+		});
+
+		expect(result.event.content.targetMessageId).toBe(own.event.id);
+		expect(result.event.content.tombstone).toBe(true);
+		const projected = projectTimeline(await flow.getRoomTimeline(room.id));
+		expect(projected.find((m) => m.id === victim.event.id)!.isDeleted).toBe(
+			false,
+		);
+		expect(projected.find((m) => m.id === own.event.id)!.isDeleted).toBe(true);
+	});
+
+	it("keeps extra content fields supplied to editMessage", async () => {
+		const { flow, room, own } = await setup();
+
+		const result = await flow.editMessage({
+			roomId: room.id,
+			senderId: "mallory",
+			messageId: own.event.id,
+			body: "edited",
+			content: { displayName: "Mallory" },
+		});
+
+		expect(result.event.content.displayName).toBe("Mallory");
+	});
+
+	it("rejects a message.edit whose targetMessageId differs from its parent", async () => {
+		const { flow, room, victim, own } = await setup();
+
+		await expect(
+			flow.publishEvent({
+				roomId: room.id,
+				senderId: "mallory",
+				type: "message.edit",
+				content: { targetMessageId: victim.event.id, body: "hijack" },
+				parentEventIds: [own.event.id],
+			}),
+		).rejects.toBeInstanceOf(MessageWeaveError);
+	});
+
+	it("rejects a message.delete without targetMessageId", async () => {
+		const { flow, room, own } = await setup();
+
+		await expect(
+			flow.publishEvent({
+				roomId: room.id,
+				senderId: "mallory",
+				type: "message.delete",
+				content: { tombstone: true },
+				parentEventIds: [own.event.id],
+			}),
+		).rejects.toBeInstanceOf(MessageWeaveError);
+	});
+
+	it("rejects a message.edit without parentEventIds", async () => {
+		const { flow, room, victim } = await setup();
+
+		await expect(
+			flow.publishEvent({
+				roomId: room.id,
+				senderId: "mallory",
+				type: "message.edit",
+				content: { targetMessageId: victim.event.id, body: "hijack" },
+			}),
+		).rejects.toBeInstanceOf(MessageWeaveError);
+	});
+
+	it("rejects an edit validation failure without burning a sequence id", async () => {
+		const { flow, room, victim, own } = await setup();
+
+		await expect(
+			flow.publishEvent({
+				roomId: room.id,
+				senderId: "mallory",
+				type: "message.edit",
+				content: { targetMessageId: victim.event.id, body: "hijack" },
+				parentEventIds: [own.event.id],
+			}),
+		).rejects.toBeInstanceOf(MessageWeaveError);
+		const next = await flow.sendMessage({
+			roomId: room.id,
+			senderId: "alice",
+			body: "next",
+		});
+		expect(next.sequenceId).toBe(own.sequenceId + 1);
+	});
+
+	it("lets a beforePublish author check guard edits and deletes", async () => {
+		const authorOf = new Map<string, string>();
+		const { flow, room, victim, own } = await setup({
+			hooks: {
+				beforePublish: async (input) => {
+					if (
+						input.type !== "message.edit" &&
+						input.type !== "message.delete"
+					) {
+						return;
+					}
+					const target = input.content?.targetMessageId;
+					if (
+						typeof target !== "string" ||
+						authorOf.get(target) !== input.senderId
+					) {
+						throw new Error("not your message");
+					}
+				},
+			},
+		});
+		authorOf.set(victim.event.id, "alice");
+		authorOf.set(own.event.id, "mallory");
+
+		await expect(
+			flow.editMessage({
+				roomId: room.id,
+				senderId: "mallory",
+				messageId: victim.event.id,
+				body: "x",
+			}),
+		).rejects.toThrow("not your message");
+		await flow.editMessage({
+			roomId: room.id,
+			senderId: "mallory",
+			messageId: own.event.id,
+			body: "x",
+			content: { targetMessageId: victim.event.id },
+		});
+		await flow.deleteMessage({
+			roomId: room.id,
+			senderId: "mallory",
+			messageId: own.event.id,
+			content: { targetMessageId: victim.event.id },
+		});
+
+		const projected = projectTimeline(await flow.getRoomTimeline(room.id));
+		const victimMessage = projected.find((m) => m.id === victim.event.id)!;
+		expect(victimMessage.body).toBe("alice original");
+		expect(victimMessage.isEdited).toBe(false);
+		expect(victimMessage.isDeleted).toBe(false);
+	});
+});

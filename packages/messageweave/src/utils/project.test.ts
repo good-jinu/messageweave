@@ -300,3 +300,70 @@ describe("projectTimeline — edge cases", () => {
 		expect(result[1]!.isEdited).toBe(false);
 	});
 });
+
+describe("projectTimeline — target integrity", () => {
+	it("ignores an edit from another room even when its target is in the stream", () => {
+		const original = makeEvent({
+			id: "a1",
+			roomId: "room_a",
+			sequenceId: 1,
+			content: { body: "room A original" },
+		});
+		const foreignEdit = makeEvent({
+			id: "b2",
+			roomId: "room_b",
+			sequenceId: 2,
+			type: "message.edit",
+			content: { targetMessageId: "a1", body: "rewritten from room B" },
+		});
+
+		const result = projectTimeline([original, foreignEdit]);
+
+		expect(result).toHaveLength(1);
+		expect(result[0]!.body).toBe("room A original");
+		expect(result[0]!.isEdited).toBe(false);
+		expect(result[0]!.rawEvents).toHaveLength(1);
+	});
+
+	it("ignores a delete from another room even when its target is in the stream", () => {
+		const original = makeEvent({
+			id: "a1",
+			roomId: "room_a",
+			sequenceId: 1,
+			content: { body: "room A original" },
+		});
+		const foreignDelete = makeEvent({
+			id: "b2",
+			roomId: "room_b",
+			sequenceId: 2,
+			type: "message.delete",
+			content: { targetMessageId: "a1", tombstone: true },
+		});
+
+		const result = projectTimeline([original, foreignDelete]);
+
+		expect(result[0]!.isDeleted).toBe(false);
+		expect(result[0]!.body).toBe("room A original");
+	});
+
+	it("ignores an edit whose targetMessageId disagrees with its parentEventIds", () => {
+		const victim = makeEvent({
+			id: "e1",
+			sequenceId: 1,
+			content: { body: "v" },
+		});
+		const own = makeEvent({ id: "e2", sequenceId: 2, content: { body: "o" } });
+		const edit = makeEvent({
+			id: "e3",
+			sequenceId: 3,
+			type: "message.edit",
+			content: { targetMessageId: "e1", body: "hijack" },
+		}) as FlowEvent & { parentEventIds: string[] };
+		edit.parentEventIds = ["e2"];
+
+		const result = projectTimeline([victim, own, edit as unknown as FlowEvent]);
+
+		expect(result.map((m) => m.body)).toEqual(["v", "o"]);
+		expect(result.every((m) => !m.isEdited)).toBe(true);
+	});
+});
