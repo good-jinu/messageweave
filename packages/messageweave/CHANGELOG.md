@@ -1,5 +1,15 @@
 # messageweave
 
+## 0.2.2
+
+### Patch Changes
+
+- [#29](https://github.com/good-jinu/messageweave/pull/29) [`16dd5f7`](https://github.com/good-jinu/messageweave/commit/16dd5f752b9028236431424e7fc7df73beffc522) Thanks [@good-jinu](https://github.com/good-jinu)! - Fix edit/delete target integrity:
+
+  - `editMessage` and `deleteMessage` no longer let `content` override `targetMessageId` or other engine-owned fields, so extra metadata cannot redirect an edit or delete to another message.
+  - `publishEvent` rejects `message.edit` and `message.delete` events unless `content.targetMessageId` is set and equals `parentEventIds[0]`. `beforePublish` hooks can rely on that field as the affected message.
+  - `projectTimeline` ignores edits and deletes whose target is in a different room or whose `targetMessageId` disagrees with `parentEventIds`.
+
 ## 0.2.1
 
 ### Patch Changes
