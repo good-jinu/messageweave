@@ -160,7 +160,10 @@ export interface EditMessageInput {
 	messageId: string;
 	/** Updated message body. Whitespace-only messages are rejected. */
 	body: string;
-	/** Optional additional JSON metadata for the edit event. */
+	/**
+	 * Optional additional JSON metadata for the edit event. It cannot override
+	 * `targetMessageId`, `body`, or `editedAt`.
+	 */
 	content?: JsonObject;
 }
 
@@ -174,7 +177,10 @@ export interface DeleteMessageInput {
 	messageId: string;
 	/** Optional reason or metadata explaining the deletion. */
 	reason?: string;
-	/** Optional additional JSON metadata for the delete event. */
+	/**
+	 * Optional additional JSON metadata for the delete event. It cannot override
+	 * `targetMessageId`, `tombstone`, `deletedAt`, or a `reason` passed above.
+	 */
 	content?: JsonObject;
 }
 
@@ -303,6 +309,10 @@ export interface MessageWeaveHooks {
 	 * Invoked before an event is sequenced and written to storage.
 	 * Can be used for custom authorization, rate limiting, or payload validation.
 	 * Throwing an error cancels the publish before consuming a sequence ID.
+	 *
+	 * For `message.edit` and `message.delete`, `input.content.targetMessageId`
+	 * is the affected message. It has already been checked to equal
+	 * `parentEventIds[0]` and to exist in the same room.
 	 */
 	beforePublish?: (input: PublishEventInput) => void | Promise<void>;
 

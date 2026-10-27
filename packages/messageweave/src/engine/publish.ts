@@ -57,6 +57,24 @@ export function createPublishMethod(
 			}
 		}
 
+		// Edits and deletes must name one unambiguous target. `projectTimeline`
+		// folds them into `content.targetMessageId`, so it must equal the first
+		// parent, which the check below confines to this room.
+		if (data.type === "message.edit" || data.type === "message.delete") {
+			const targetMessageId = data.content?.targetMessageId;
+			const parentId = data.parentEventIds?.[0];
+			if (typeof targetMessageId !== "string" || parentId === undefined) {
+				throw new MessageWeaveError(
+					`${data.type} requires content.targetMessageId and parentEventIds`,
+				);
+			}
+			if (targetMessageId !== parentId) {
+				throw new MessageWeaveError(
+					`${data.type} content.targetMessageId must equal parentEventIds[0]`,
+				);
+			}
+		}
+
 		// Room must exist; reject before consuming a sequence id.
 		const roomRow = await adapter.findOne({
 			model: "room",

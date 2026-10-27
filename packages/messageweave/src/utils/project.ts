@@ -5,6 +5,34 @@ import type {
 } from "../types";
 
 /**
+ * Find the message an edit or delete applies to, from `content.targetMessageId`
+ * or `parentEventIds`. Returns `undefined` when the two disagree or when the
+ * target is in a different room, so a revision can never reach a message
+ * outside its own room even when projecting a multi-room sync stream.
+ */
+function resolveTarget(
+	event: FlowEvent,
+	messageMap: Map<string, ProjectedMessage>,
+): ProjectedMessage | undefined {
+	const raw = event as unknown as {
+		parentEventIds?: string[];
+		parentEventId?: string;
+	};
+	const parentId = raw.parentEventIds?.[0] ?? raw.parentEventId;
+	const contentTarget =
+		typeof event.content.targetMessageId === "string"
+			? event.content.targetMessageId
+			: undefined;
+	if (contentTarget && parentId && contentTarget !== parentId) {
+		return undefined;
+	}
+
+	const targetId = contentTarget ?? parentId;
+	const projected = targetId ? messageMap.get(targetId) : undefined;
+	return projected?.roomId === event.roomId ? projected : undefined;
+}
+
+/**
  * Projects a raw stream of `FlowEvent` records into a list of presentation
  * messages (`ProjectedMessage`), folding revisions (`message.edit`) and
  * deletions (`message.delete`) into their respective target messages.
@@ -34,20 +62,8 @@ export function projectTimeline(
 		}
 
 		if (event.type === "message.edit") {
-			// Find target message from content.targetMessageId or parentEventIds
-			const raw = event as unknown as {
-				parentEventIds?: string[];
-				parentEventId?: string;
-			};
-			const targetId =
-				(typeof event.content.targetMessageId === "string"
-					? event.content.targetMessageId
-					: null) ??
-				raw.parentEventIds?.[0] ??
-				raw.parentEventId;
-
-			if (targetId && messageMap.has(targetId)) {
-				const projected = messageMap.get(targetId)!;
+			const projected = resolveTarget(event, messageMap);
+			if (projected) {
 				const newBody =
 					typeof event.content.body === "string"
 						? event.content.body
@@ -69,19 +85,8 @@ export function projectTimeline(
 		}
 
 		if (event.type === "message.delete") {
-			const raw = event as unknown as {
-				parentEventIds?: string[];
-				parentEventId?: string;
-			};
-			const targetId =
-				(typeof event.content.targetMessageId === "string"
-					? event.content.targetMessageId
-					: null) ??
-				raw.parentEventIds?.[0] ??
-				raw.parentEventId;
-
-			if (targetId && messageMap.has(targetId)) {
-				const projected = messageMap.get(targetId)!;
+			const projected = resolveTarget(event, messageMap);
+			if (projected) {
 				const deletedAt =
 					typeof event.content.deletedAt === "number"
 						? event.content.deletedAt
